@@ -1,0 +1,8 @@
+# 忽略所有原圖，避免上傳緩慢且容量超標
+images/*
+
+# 但是要保留 banner.jpg 否則網頁頂部會破圖
+!images/banner.jpg
+
+# 忽略 node_modules
+node_modules/

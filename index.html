@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>線上影展 - 3D 展廳</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
+  
+  <style>
+    /* ... 這裡保留你原本所有的 CSS 樣式 (root, body, banner, month-filter, swiper 等) ... */
+    :root { --primary-color: #0056b3; --bg-color: #1a1a1d; }
+    body { margin: 0; padding: 0; font-family: 'Noto Sans TC', sans-serif; background-color: var(--bg-color); color: #fff; overflow-x: hidden; }
+    .banner-container { position: relative; width: 100%; height: 260px; background-color: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+    .banner-container img { width: 100%; height: 100%; object-fit: cover; opacity: 0.7; }
+    .swiper-container { width: 100%; padding-top: 30px; padding-bottom: 50px; }
+    .swiper-slide { background-position: center; background-size: cover; width: 300px; height: 400px; }
+    .swiper-slide img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); cursor: pointer; }
+    /* ... 其他樣式保持不變 ... */
+    #overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); display:none; justify-content:center; align-items:center; z-index:10000; }
+    #overlay img { max-width:95%; max-height:95%; object-fit:contain; }
+  </style>
+</head>
+<body>
+
+  <div id="banner" class="banner-container">
+    <img id="banner-img" src="" alt="Banner">
+    <div class="banner-text"><h1>慈天相片影展</h1></div>
+  </div>
+
+  <div id="month-filter" class="month-filter"></div>
+
+  <div class="swiper-container">
+    <div id="swiper-wrapper" class="swiper-wrapper"></div>
+    <div class="swiper-button-next"></div>
+    <div class="swiper-button-prev"></div>
+  </div>
+
+  <div id="overlay" onclick="this.style.display='none'"><img id="overlay-img" src=""></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
+  <script src="data.js"></script>
+  <script>
+    var mySwiper;
+    
+    // 🌟 環境判斷：判斷是否為本地開啟
+    var isLocal = window.location.protocol === 'file:' || 
+                  window.location.hostname === 'localhost' || 
+                  window.location.hostname === '127.0.0.1';
+
+    function initPage() {
+      document.getElementById('banner-img').src = eventConfig.bannerUrl;
+      renderFilter();
+      renderGallery();
+    }
+
+    function renderFilter() {
+      var filterContainer = document.getElementById('month-filter');
+      var months = [...new Set(localImages.map(img => img.monthLabel))];
+      months.forEach(function(month) {
+        var btn = document.createElement('div');
+        btn.className = 'month-btn';
+        btn.id = 'btn-month-' + month;
+        btn.innerText = month;
+        btn.onclick = function() {
+          var targetIndex = localImages.findIndex(img => img.monthLabel === month);
+          if (mySwiper) mySwiper.slideTo(targetIndex);
+        };
+        filterContainer.appendChild(btn);
+      });
+    }
+
+    function renderGallery() {
+      var wrapper = document.getElementById('swiper-wrapper');
+      wrapper.innerHTML = '';
+
+      localImages.forEach(function(imgData) {
+        var slide = document.createElement('div');
+        slide.className = 'swiper-slide';
+
+        var img = document.createElement('img');
+        
+        // 🌟 關鍵邏輯：本地用 highUrl，線上用 thumbUrl
+        img.src = isLocal ? imgData.highUrl : imgData.thumbUrl;
+
+        img.onclick = function() {
+          // 點擊放大：本地看原圖，線上看縮圖 (因為線上沒有 images 資料夾)
+          showOverlay(isLocal ? imgData.highUrl : imgData.thumbUrl);
+        };
+        slide.appendChild(img);
+        wrapper.appendChild(slide);
+      });
+
+      mySwiper = new Swiper('.swiper-container', {
+        effect: 'coverflow',
+        grabCursor: true,
+        centeredSlides: true,
+        slidesPerView: 'auto',
+        coverflowEffect: {
+          rotate: 30, // 3D 旋轉角度
+          stretch: 0,
+          depth: 200,
+          modifier: 1,
+          slideShadows: true,
+        },
+        navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" }
+      });
+    }
+
+    function showOverlay(src) {
+      document.getElementById('overlay-img').src = src;
+      document.getElementById('overlay').style.display = 'flex';
+    }
+
+    window.onload = initPage;
+  </script>
+</body>
+</html>
