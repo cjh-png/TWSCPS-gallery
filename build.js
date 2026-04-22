@@ -13,7 +13,7 @@ let localPlaylist = [];
 if (!fs.existsSync(thumbsDir)) fs.mkdirSync(thumbsDir, { recursive: true });
 
 async function buildGallery() {
-    console.log("🚀 開始處理圖片與縮圖...");
+    console.log("🚀 開始處理圖片與縮圖 (WebP 高效模式)...");
 
     if (fs.existsSync(imagesDir)) {
         const items = fs.readdirSync(imagesDir);
@@ -32,27 +32,28 @@ async function buildGallery() {
                 for (const file of files) {
                     if (file.match(/\.(jpg|jpeg|png|webp)$/i)) {
                         const originalPath = path.join(itemPath, file);
-                        const thumbPath = path.join(thumbFolderPath, file);
+                        
+                        // 🌟 關鍵修正：將縮圖檔名強制改為 .webp
+                        const webpFileName = file.replace(/\.(jpg|jpeg|png)$/i, '.webp');
+                        const thumbPath = path.join(thumbFolderPath, webpFileName);
 
-                        // 🌟 加入 try...catch 保護機制，遇到壞圖片不會崩潰
                         try {
                             if (!fs.existsSync(thumbPath)) {
-                                console.log(`📸 壓縮中: ${item}/${file}`);
+                                console.log(`📸 壓縮中: ${item}/${webpFileName}`);
                                 await sharp(originalPath)
-                                    .resize({ width: 1200, withoutEnlargement: true })
-                                    .webp({ quality: 80 }) // 將 .jpeg 改為 .webp
-                                    .toFile(thumbPath.replace(/\.(jpg|jpeg|png)$/i, '.webp'));
-                                                            }
+                                    .resize({ width: 1200, withoutEnlargement: true }) // 1200px 高清解析度
+                                    .webp({ quality: 80 }) // 轉為 WebP，品質 80
+                                    .toFile(thumbPath);
+                            }
 
-                            // 確保成功壓縮（或已經有縮圖）才加入清單
                             localImages.push({
                                 folderName: item,
                                 monthLabel: monthLabel,
-                                highUrl: `./images/${item}/${file}`,
-                                thumbUrl: `./thumbs/${item}/${file}`
+                                highUrl: `./images/${item}/${file}`,      // 本地看原圖 (保留原始檔名)
+                                thumbUrl: `./thumbs/${item}/${webpFileName}` // 線上看縮圖 (使用 WebP 檔名)
                             });
                         } catch (error) {
-                            console.log(`⚠️ 警告：無法讀取或壓縮圖片 ${item}/${file}，已自動跳過！`);
+                            console.log(`⚠️ 警告：無法讀取圖片 ${item}/${file}，已自動跳過！`);
                         }
                     }
                 }
