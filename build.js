@@ -39,10 +39,10 @@ async function buildGallery() {
                             if (!fs.existsSync(thumbPath)) {
                                 console.log(`📸 壓縮中: ${item}/${file}`);
                                 await sharp(originalPath)
-                                    .resize({ width: 800, withoutEnlargement: true })
-                                    .jpeg({ quality: 75 })
-                                    .toFile(thumbPath);
-                            }
+                                    .resize({ width: 1200, withoutEnlargement: true })
+                                    .webp({ quality: 80 }) // 將 .jpeg 改為 .webp
+                                    .toFile(thumbPath.replace(/\.(jpg|jpeg|png)$/i, '.webp'));
+                                                            }
 
                             // 確保成功壓縮（或已經有縮圖）才加入清單
                             localImages.push({
