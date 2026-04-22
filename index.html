@@ -94,8 +94,6 @@
     .swiper-button-next, .swiper-button-prev { color: white !important; background: rgba(255,255,255,0.1); width: 45px !important; height: 45px !important; border-radius: 50%; padding: 10px; backdrop-filter: blur(5px); opacity: 0.8;}
     .swiper-button-next::after, .swiper-button-prev::after { font-size: 22px !important; }
 
-    #loading { margin: 100px 0; color: #999; font-size: 18px; text-align: center; font-weight: bold; letter-spacing: 1px;}
-    
     /* 🎵 音樂播放器樣式 */
     .music-player {
       position: fixed; bottom: 20px; right: 20px; z-index: 1000;
@@ -135,6 +133,22 @@
     }
     #overlay img { max-width: 95%; max-height: 95%; object-fit: contain; border-radius: 8px; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
 
+    /* 🌟 全新歡迎/載入遮罩 (解決音樂與渲染問題) */
+    #welcome-screen {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--bg-color); z-index: 99999;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      transition: opacity 0.6s ease;
+    }
+    .welcome-title { font-size: 28px; font-weight: bold; margin-bottom: 20px; letter-spacing: 2px; }
+    #loading-text { color: #999; font-size: 16px; margin-bottom: 20px; }
+    #enter-btn {
+      padding: 12px 35px; font-size: 18px; font-weight: bold; border-radius: 30px;
+      background: var(--primary-color); color: white; border: none; cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,86,179,0.5); display: none; transition: transform 0.2s;
+    }
+    #enter-btn:hover { transform: scale(1.05); }
+
     @media (max-width: 600px) {
         .main-content { margin: -10px auto 30px auto; padding: 5px; }
         .swiper-slide { height: 70vh; width: 85%; }
@@ -151,16 +165,21 @@
 </head>
 <body>
 
+  <div id="welcome-screen">
+    <div class="welcome-title" id="welcome-title-text">載入中...</div>
+    <div id="loading-text">✨ 正在為您佈置 3D 展廳，請稍候...</div>
+    <button id="enter-btn">進入展廳</button>
+  </div>
+
   <div class="banner-container">
     <div class="banner-bg-blur" id="banner-blur"></div>
     <img src="" id="banner-img" class="banner-new-photo" alt="活動影展 Banner">
   </div>
 
   <div class="main-content">
-    <h2 id="activity-title" style="text-align:center;">載入中...</h2>
+    <h2 id="activity-title" style="text-align:center;"></h2>
     
     <div class="month-nav-container" id="month-nav" style="display: none;"></div>
-    <div id="loading">✨ 正在為您佈置 3D 展廳，請稍候...</div>
     
     <div class="swiper mySwiper" style="display: none;" id="swiper-area">
       <div class="swiper-wrapper" id="swiper-wrapper"></div>
@@ -184,14 +203,12 @@
   <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
   <script src="./data.js"></script> 
   <script>
-    // === 核心變數 ===
     var mySwiper = null;
     var monthStartIndex = {}; 
     var currentAudioIndex = 0;
     var myAudio = new Audio();
     var galleryLoaded = false;
 
-    // 🌟 關鍵：判斷目前是在本地電腦，還是在 GitHub 線上
     var isLocal = window.location.protocol === 'file:' || 
                   window.location.hostname === 'localhost' || 
                   window.location.hostname === '127.0.0.1';
@@ -199,6 +216,7 @@
     window.onload = function() {
       document.title = eventConfig.activityName;
       document.getElementById('activity-title').innerText = eventConfig.activityName;
+      document.getElementById('welcome-title-text').innerText = eventConfig.activityName;
       document.getElementById('banner-blur').style.backgroundImage = "url('" + eventConfig.bannerUrl + "')";
       document.getElementById('banner-img').src = eventConfig.bannerUrl;
 
@@ -220,11 +238,12 @@
       myAudio.src = localPlaylist[index].src;
       document.getElementById('track-name').innerText = localPlaylist[index].name;
       updatePlayBtnState(false);
-      checkAndPlayAuto();
+      // 🛑 移除了原本會被瀏覽器阻擋的自動播放，改交由進入按鈕觸發
     }
 
     myAudio.addEventListener('ended', function() {
       loadAudioTrack(currentAudioIndex + 1); 
+      myAudio.play().catch(e => console.log(e)); // 下一首自動播放
     });
 
     function toggleMusic() {
@@ -240,15 +259,8 @@
       document.getElementById('play-btn-icon').innerText = isPlaying ? "⏸️" : "▶️";
     }
 
-    function checkAndPlayAuto() {
-      if (myAudio.paused) {
-        myAudio.play().then(() => updatePlayBtnState(true)).catch(e => console.log("等待點擊播放"));
-      }
-    }
-
     // === 相簿生成邏輯 ===
     function initGallery(data) {
-      document.getElementById('loading').style.display = 'none';
       if (data.length === 0) return;
 
       document.getElementById('swiper-area').style.display = 'block';
@@ -279,22 +291,19 @@
         badgeEl.className = 'folder-badge';
         badgeEl.innerText = img.folderName; 
 
-        // 💡 背景模糊統一用縮圖即可，載入快且效果一樣
         var bgBlurEl = document.createElement('div');
         bgBlurEl.className = 'slide-bg-blur';
         bgBlurEl.style.backgroundImage = "url('" + encodeURI(img.thumbUrl) + "')";
 
         var imageEl = document.createElement('img'); 
         imageEl.className = 'main-photo';
-        // 🌟 關鍵：本地端用 highUrl (原圖)，線上端用 thumbUrl (縮圖)
         imageEl.src = isLocal ? img.highUrl : img.thumbUrl; 
         imageEl.loading = "lazy"; 
         
-        // 🌟 點擊照片放大功能
         imageEl.onclick = function() {
           document.getElementById('overlay-img').src = isLocal ? img.highUrl : img.thumbUrl;
           document.getElementById('overlay').style.display = 'flex';
-          if (mySwiper && mySwiper.autoplay) mySwiper.autoplay.stop(); // 放大時暫停輪播
+          if (mySwiper && mySwiper.autoplay) mySwiper.autoplay.stop(); 
         };
 
         var nameEl = document.createElement('div'); 
@@ -308,18 +317,44 @@
         wrapper.appendChild(slide);
       });
 
+      // 🌟 優化 Swiper 初始化參數，防止大量圖片造成的渲染卡頓
       mySwiper = new Swiper(".mySwiper", {
         initialSlide: 0, effect: "coverflow", grabCursor: true, centeredSlides: true, slidesPerView: "auto", 
         coverflowEffect: { rotate: 15, stretch: -15, depth: 400, modifier: 1, slideShadows: true },
-        autoplay: { delay: 3000, disableOnInteraction: false },
+        autoplay: false, // 🛑 關閉預設自動播放，等使用者點擊進入後再開始
+        observer: true,        // 監聽 DOM 變化，自動更新重新排版
+        observeParents: true,  // 監聽父層變化
         pagination: { el: ".swiper-pagination", type: "fraction" },
         navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
         on: { slideChange: updateActiveMonthBtn }
       });
       
       updateActiveMonthBtn(); 
-      galleryLoaded = true;
+
+      // 🌟 排版完成後，隱藏「載入中」，顯示「進入展廳」按鈕
+      setTimeout(() => {
+        document.getElementById('loading-text').style.display = 'none';
+        document.getElementById('enter-btn').style.display = 'block';
+      }, 800); // 稍微延遲 0.8 秒，確保瀏覽器有足夠時間畫出 500 張圖的骨架
     }
+
+    // 🌟 點擊「進入展廳」按鈕的事件
+    document.getElementById('enter-btn').onclick = function() {
+      // 1. 淡出歡迎畫面
+      var ws = document.getElementById('welcome-screen');
+      ws.style.opacity = '0';
+      setTimeout(() => ws.style.display = 'none', 600);
+
+      // 2. 啟動音樂 (因為是使用者點擊觸發，瀏覽器絕對不會阻擋)
+      if (myAudio.paused && localPlaylist.length > 0) {
+        myAudio.play().then(() => updatePlayBtnState(true)).catch(e => console.log(e));
+      }
+
+      // 3. 啟動輪播圖自動播放
+      if (mySwiper) {
+        mySwiper.autoplay.start();
+      }
+    };
 
     function updateActiveMonthBtn() {
       if (!mySwiper || localImages.length === 0) return;
@@ -337,13 +372,11 @@
       }
     }
 
-    // 🌟 關閉放大的遮罩
     document.getElementById('overlay').onclick = function() {
       this.style.display = 'none';
-      if (mySwiper && mySwiper.autoplay) mySwiper.autoplay.start(); // 關閉後恢復輪播
+      if (mySwiper && mySwiper.autoplay) mySwiper.autoplay.start(); 
     };
 
-    // === 全螢幕控制邏輯 ===
     function toggleFullScreen() {
       var doc = window.document;
       var docEl = doc.documentElement;
