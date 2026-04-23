@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>線上影展 - 極簡測試版 (修復記憶體崩潰)</title>
+  <title>線上影展 - 極簡測試版 (自動播放)</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
   
@@ -134,7 +134,10 @@
             btn.innerText = img.monthLabel;
             btn.id = 'btn-month-' + img.monthLabel;
             btn.onclick = function() { 
-                if(mySwiper) mySwiper.slideTo(index); 
+                if(mySwiper) {
+                  mySwiper.slideTo(index);
+                  if(mySwiper.autoplay) mySwiper.autoplay.start(); // 點擊月份後確保繼續播放
+                }
             };
             navContainer.appendChild(btn);
           }
@@ -145,18 +148,16 @@
         var slide = document.createElement('div');
         slide.className = 'swiper-slide';
         
-        // 【關鍵修改】：把 src 改成 data-src，一開始不要載入圖片
+        // 保持延遲載入機制
         slide.innerHTML = '<img data-src="' + imgUrl + '" alt="' + img.folderName + '">';
         wrapper.appendChild(slide);
       });
 
-      // 【關鍵修改】：這個函數負責「只載入目前這張，和前後各兩張圖片」
       function loadNearbyImages() {
         if (!mySwiper || !mySwiper.slides) return;
         var activeIdx = mySwiper.activeIndex;
         var slides = mySwiper.slides;
         
-        // 計算需要載入的範圍 (前後各2張)
         var start = Math.max(0, activeIdx - 2);
         var end = Math.min(slides.length - 1, activeIdx + 2);
         
@@ -165,30 +166,35 @@
           if (!s) continue;
           
           var img = s.querySelector('img');
-          // 如果圖片還沒載入，就把 data-src 塞給 src 讓他開始下載
           if (img && img.getAttribute('data-src')) {
             img.src = img.getAttribute('data-src');
             img.removeAttribute('data-src');
             img.onload = function() {
-              this.classList.add('loaded'); // 載入完畢後顯示
+              this.classList.add('loaded'); 
             }
           }
         }
       }
 
+      // 初始化 Swiper 並加入自動播放
       mySwiper = new Swiper(".mySwiper", {
         slidesPerView: 1, 
         spaceBetween: 20, 
         navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
         pagination: { el: ".swiper-pagination", type: "fraction" },
+        
+        // 【新增】：2秒自動播放設定
+        autoplay: {
+          delay: 2000, // 2000 毫秒 = 2 秒
+          disableOnInteraction: false, // 使用者操作後不停止自動播放
+        },
+        
         on: { 
           init: function () {
-            // 初始化時載入前幾張圖片
             setTimeout(loadNearbyImages, 50); 
           },
           slideChange: function () { 
             updateActiveMonthBtn(); 
-            // 滑動時載入接下來的圖片
             loadNearbyImages();
           }
         }
