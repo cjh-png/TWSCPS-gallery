@@ -8,56 +8,187 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
   
   <style>
-    :root { --primary-color: #0056b3; --bg-color: #1a1a1d; }
-    body { margin: 0; padding: 0; font-family: 'Noto Sans TC', sans-serif; background-color: var(--bg-color); color: #fff; overflow-x: hidden; -webkit-user-select: none; user-select: none; }
+    :root {
+      --primary-color: #0056b3; 
+      --bg-color: #1a1a1d; 
+    }
+    
+    body { margin: 0; padding: 0; font-family: 'Noto Sans TC', sans-serif; background-color: var(--bg-color); color: #fff; overflow-x: hidden; }
+    body { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; -webkit-touch-callout: none; }
 
-    /* === Banner & 介面樣式 === */
-    .banner-container { position: relative; width: 100%; height: 260px; background-color: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; }
-    .banner-bg-blur { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; filter: blur(25px) brightness(0.6); transform: scale(1.1); z-index: 1; }
-    .banner-new-photo { display: block; max-width: 100%; height: 100%; object-fit: contain; position: relative; z-index: 2; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
-    
+    /* === Banner === */
+    .banner-container { 
+      position: relative; width: 100%; height: 260px; 
+      background-color: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; 
+    }
+    .banner-bg-blur { 
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+      background-size: cover; background-position: center; 
+      filter: blur(25px) brightness(0.6); transform: scale(1.1); z-index: 1; 
+    }
+    .banner-new-photo { 
+      display: block; max-width: 100%; height: 100%; object-fit: contain; 
+      position: relative; z-index: 2; box-shadow: 0 0 30px rgba(0,0,0,0.5); 
+    }
+    .banner-overlay { 
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+      background: linear-gradient(to bottom, rgba(0,0,0,0.2), var(--bg-color)); z-index: 3; 
+    }
+
+    /* === Main Container === */
     .main-content { max-width: 1600px; margin: -20px auto 40px auto; padding: 10px; position: relative; z-index: 10; }
-    
-    /* 月份按鈕 */
-    .month-nav-container { background: rgba(40,40,45,0.8); padding: 10px 15px; border-radius: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin-bottom: 20px; display: flex; gap: 8px; overflow-x: auto; white-space: nowrap; -ms-overflow-style: none; scrollbar-width: none; backdrop-filter: blur(10px); justify-content: center; }
+
+    /* === 月份導航列 === */
+    .month-nav-container {
+      background: rgba(40,40,45,0.8); padding: 10px 15px; border-radius: 50px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin-bottom: 20px;
+      display: flex; gap: 8px; overflow-x: auto; white-space: nowrap;
+      -ms-overflow-style: none; scrollbar-width: none; backdrop-filter: blur(10px);
+      justify-content: center;
+    }
     .month-nav-container::-webkit-scrollbar { display: none; }
-    .month-btn { background: rgba(60,60,65,0.5); border: none; padding: 8px 18px; border-radius: 30px; font-size: 14px; font-weight: bold; color: #ccc; cursor: pointer; transition: all 0.3s; }
+    
+    .month-btn {
+      background: rgba(60,60,65,0.5); border: none; padding: 8px 18px; border-radius: 30px;
+      font-size: 14px; font-weight: bold; color: #ccc; cursor: pointer; transition: all 0.3s;
+    }
+    .month-btn:hover { background: rgba(80,80,85,0.8); color: white;}
     .month-btn.active { background: var(--primary-color); color: white; box-shadow: 0 4px 15px rgba(0,86,179,0.5); }
 
-    /* Swiper & 幻燈片 */
+    /* === 3D Swiper === */
     .swiper { width: 100%; padding-top: 20px; padding-bottom: 70px; }
-    .swiper-slide { width: auto; height: 80vh; max-height: 900px; min-height: 400px; background-color: #000; border-radius: 15px; box-shadow: 0 25px 60px rgba(0,0,0,0.6); overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; }
-    .swiper-slide img.main-photo { display: block; max-width: 100%; height: 100%; object-fit: contain; position: relative; z-index: 2; opacity: 0; transition: opacity 0.4s ease-in-out; cursor: pointer; }
-    .swiper-slide-active img.main-photo { opacity: 1; }
-    .folder-badge { position: absolute; top: 20px; left: 20px; background: rgba(0, 0, 0, 0.6); color: white; padding: 7px 18px; border-radius: 30px; font-weight: bold; font-size: 13px; z-index: 10; backdrop-filter: blur(5px); border-left: 3px solid var(--primary-color); opacity: 0; transition: opacity 0.4s; }
-    .swiper-slide-active .folder-badge { opacity: 1; }
-    .photo-name { position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); color: rgba(255,255,255,0.7); font-size: 11px; padding: 40px 15px 15px 15px; text-align: center; z-index: 4; letter-spacing: 2px;}
+    
+    .swiper-slide { 
+      width: auto; height: 80vh; max-height: 900px; min-height: 400px; 
+      background-color: #000; border-radius: 15px; box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+      overflow: hidden; position: relative; transition: all 0.3s ease;
+      display: flex; align-items: center; justify-content: center;
+    }
+    
+    .slide-bg-blur {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background-size: cover; background-position: center; filter: blur(25px) brightness(0.6); 
+      transform: scale(1.1); z-index: 1;
+    }
 
-    /* 控制元件 */
+    .swiper-slide img.main-photo { 
+      display: block; max-width: 100%; height: 100%; object-fit: contain; 
+      position: relative; z-index: 2; box-shadow: 0 0 40px rgba(0,0,0,0.5);
+      opacity: 0; transition: opacity 0.4s ease-in-out; cursor: pointer;
+    }
+    .swiper-slide-active img.main-photo { opacity: 1; }
+
+    .folder-badge {
+      position: absolute; top: 20px; left: 20px; background: rgba(0, 0, 0, 0.6); color: white;
+      padding: 7px 18px; border-radius: 30px; font-weight: bold; font-size: 13px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4); z-index: 10; backdrop-filter: blur(5px);
+      border-left: 3px solid var(--primary-color); opacity: 0; transition: opacity 0.4s;
+    }
+    .swiper-slide-active .folder-badge { opacity: 1; }
+    
+    .photo-name { position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); color: rgba(255,255,255,0.7); font-size: 11px; padding: 40px 15px 15px 15px; text-align: center; z-index: 4; box-sizing: border-box; letter-spacing: 2px;}
+
+    .swiper-pagination-bullet { background: rgba(255,255,255,0.3) !important; }
+    .swiper-pagination-bullet-active { background: #fff !important; }
     .swiper-pagination-fraction { color: #fff !important; font-weight: bold; font-size: 16px; bottom: 15px !important;}
     .swiper-button-next, .swiper-button-prev { color: white !important; background: rgba(255,255,255,0.1); width: 45px !important; height: 45px !important; border-radius: 50%; padding: 10px; backdrop-filter: blur(5px); opacity: 0.8;}
-    
-    .music-player { position: fixed; bottom: 20px; right: 20px; z-index: 1000; background: rgba(30, 30, 35, 0.8); backdrop-filter: blur(10px); padding: 8px 15px 8px 8px; border-radius: 50px; display: flex; align-items: center; gap: 10px; box-shadow: 0 8px 25px rgba(0,0,0,0.6); }
-    .play-btn { background: var(--primary-color); border: none; color: white; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-    .track-info { font-size: 12px; color: #ddd; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .swiper-button-next::after, .swiper-button-prev::after { font-size: 22px !important; }
 
-    #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: none; justify-content: center; align-items: center; z-index: 10000; backdrop-filter: blur(10px); cursor: zoom-out; }
-    #overlay img { max-width: 95%; max-height: 95%; object-fit: contain; border-radius: 8px; }
+    /* 🎵 音樂播放器樣式 */
+    .music-player {
+      position: fixed; bottom: 20px; right: 20px; z-index: 1000;
+      background: rgba(30, 30, 35, 0.8); backdrop-filter: blur(10px);
+      padding: 8px 15px 8px 8px; border-radius: 50px; display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1);
+      transition: transform 0.3s;
+    }
+    .music-player:hover { transform: scale(1.05); background: rgba(40, 40, 45, 0.9); }
+    .play-btn {
+      background: var(--primary-color); border: none; color: white;
+      width: 38px; height: 38px; border-radius: 50%; cursor: pointer;
+      display: flex; justify-content: center; align-items: center; font-size: 14px;
+      box-shadow: 0 4px 10px rgba(0,86,179,0.5);
+    }
+    .track-info {
+      font-size: 12px; color: #ddd; max-width: 120px; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; font-weight: 500;
+    }
 
-    /* 開場動畫按鈕 (強制 CSS 顯示) */
-    #welcome-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.6s ease; }
-    .welcome-title { font-size: 28px; font-weight: bold; margin-bottom: 20px; text-align: center; }
-    #loading-text { color: #999; font-size: 16px; margin-bottom: 20px; }
+    /* 📺 全螢幕按鈕樣式 */
+    .fullscreen-btn {
+      position: fixed; bottom: 20px; left: 20px; z-index: 1000;
+      background: rgba(30, 30, 35, 0.8); backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1); color: white;
+      width: 42px; height: 42px; border-radius: 50%; cursor: pointer;
+      display: flex; justify-content: center; align-items: center; font-size: 18px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.6); transition: all 0.3s;
+    }
+    .fullscreen-btn:hover { background: var(--primary-color); transform: scale(1.1); }
+
+    /* 🌟 點擊放大的遮罩層 */
+    #overlay { 
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+      background: rgba(0,0,0,0.95); display: none; justify-content: center; align-items: center; 
+      z-index: 10000; backdrop-filter: blur(10px); cursor: zoom-out;
+    }
+    #overlay img { max-width: 95%; max-height: 95%; object-fit: contain; border-radius: 8px; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
+
+    /* 🌟 全新歡迎/載入遮罩 */
+    #welcome-screen {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--bg-color); z-index: 99999;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      transition: opacity 0.6s ease;
+    }
+    .welcome-title { font-size: 28px; font-weight: bold; margin-bottom: 20px; letter-spacing: 2px; text-align: center; padding: 0 20px;}
+    #loading-text { color: #999; font-size: 16px; margin-bottom: 20px; text-align: center; }
     
-    @keyframes forceShow { 0%, 80% { opacity: 0; pointer-events: none; } 100% { opacity: 1; pointer-events: auto; } }
-    #enter-btn { padding: 12px 35px; font-size: 18px; font-weight: bold; border-radius: 30px; background: var(--primary-color); color: white; border: none; cursor: pointer; opacity: 0; pointer-events: none; animation: forceShow 1.5s forwards; }
-    #error-log { color: #ff6b6b; font-size: 14px; margin-top: 15px; text-align: center; max-width: 80%; }
+/* 🌟 改用純 CSS 動畫強制顯示按鈕，完全不依賴 JavaScript */
+    @keyframes forceShow {
+      0% { opacity: 0; pointer-events: none; }
+      90% { opacity: 0; pointer-events: none; }
+      100% { opacity: 1; pointer-events: auto; }
+    }
+    
+    #enter-btn {
+      padding: 12px 35px; font-size: 18px; font-weight: bold; border-radius: 30px;
+      background: var(--primary-color); color: white; border: none; cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,86,179,0.5); transition: transform 0.2s;
+      /* 取消原本的 display: none，改用動畫在 2 秒後浮現 */
+      opacity: 0; pointer-events: none; 
+      animation: forceShow 2s forwards; 
+    }
+    #enter-btn:hover { transform: scale(1.05); }
+    
+    /* 錯誤訊息專用樣式 */
+    #error-log { color: #ff6b6b; font-size: 14px; margin-top: 15px; text-align: center; max-width: 80%; word-wrap: break-word;}
+
 
     @media (max-width: 600px) {
+        .main-content { margin: -10px auto 30px auto; padding: 5px; }
         .swiper-slide { height: 70vh; width: 85%; }
+        .month-nav-container { justify-content: flex-start; padding: 10px; margin-bottom: 10px; gap: 5px;}
+        .month-btn { font-size: 13px; padding: 6px 14px; }
         .banner-container { height: 180px; } 
+        .music-player { bottom: 15px; right: 15px; padding: 6px 12px 6px 6px; }
+        .play-btn { width: 34px; height: 34px; }
+        .track-info { max-width: 90px; }
+        .fullscreen-btn { bottom: 15px; left: 15px; width: 36px; height: 36px; font-size: 16px; } 
     }
   </style>
+  <script>
+    // 🌟 終極抓漏探測器：如果有任何程式碼當機，直接印在手機畫面上！
+    window.onerror = function(message, source, lineno, colno, error) {
+      var logDiv = document.getElementById('error-log');
+      if (!logDiv) {
+        logDiv = document.createElement('div');
+        logDiv.id = 'error-log';
+        document.getElementById('welcome-screen').appendChild(logDiv);
+      }
+      logDiv.innerHTML += "⚠️ 錯誤報告: " + message + " (行數: " + lineno + ")<br>";
+      return false; 
+    };
+  </script>
 </head>
 <body>
 
@@ -69,11 +200,12 @@
 
   <div class="banner-container">
     <div class="banner-bg-blur" id="banner-blur"></div>
-    <img src="" id="banner-img" class="banner-new-photo" onerror="this.style.display='none'">
+    <img src="" id="banner-img" class="banner-new-photo" alt="活動影展 Banner" onerror="this.style.display='none'">
   </div>
 
   <div class="main-content">
     <h2 id="activity-title" style="text-align:center;"></h2>
+    
     <div class="month-nav-container" id="month-nav" style="display: none;"></div>
     
     <div class="swiper mySwiper" style="display: none;" id="swiper-area">
@@ -84,12 +216,14 @@
     </div>
   </div>
 
+  <button class="fullscreen-btn" onclick="toggleFullScreen()" id="fs-btn" title="進入全螢幕播放">📺</button>
+
   <div class="music-player" id="music-player-ui" style="display: none;">
     <button class="play-btn" onclick="toggleMusic()" id="play-btn-icon">▶️</button>
     <div class="track-info" id="track-name">載入音樂中...</div>
   </div>
 
-  <div id="overlay" onclick="closeOverlay()">
+  <div id="overlay">
     <img id="overlay-img" src="">
   </div>
 
@@ -97,22 +231,27 @@
   <script src="./data.js"></script> 
   
   <script>
-    // 錯誤監控
-    window.onerror = function(msg, url, line) {
-      var logDiv = document.getElementById('error-log');
-      if (!logDiv) { logDiv = document.createElement('div'); logDiv.id = 'error-log'; document.getElementById('welcome-screen').appendChild(logDiv); }
-      logDiv.innerHTML += "⚠️ 錯誤: " + msg + " (行: " + line + ")<br>";
-    };
-
     var mySwiper = null;
     var monthStartIndex = {}; 
     var currentAudioIndex = 0;
     var myAudio = new Audio();
-    var virtualSlidesData = []; // 🌟 用來存放 500 張照片的「字串」，而不是實體 DOM
     
-    var isLocal = window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    // 檢查是否為本地預覽
+    var isLocal = window.location.protocol === 'file:' || 
+                  window.location.hostname === 'localhost' || 
+                  window.location.hostname === '127.0.0.1';
 
+    // 🌟 核心保命機制與初始化：不使用 window.onload，改用 DOMContentLoaded
     document.addEventListener("DOMContentLoaded", function() {
+      
+      // 🛡️ 保命機制：不管圖片是否下載卡住，1.5秒後絕對強制顯示「進入按鈕」
+      setTimeout(() => {
+        var loadingText = document.getElementById('loading-text');
+        var enterBtn = document.getElementById('enter-btn');
+        if(loadingText) loadingText.style.display = 'none';
+        if(enterBtn) enterBtn.style.display = 'block';
+      }, 1500);
+
       try {
         if(typeof eventConfig !== 'undefined') {
             document.title = eventConfig.activityName;
@@ -121,17 +260,23 @@
             document.getElementById('banner-blur').style.backgroundImage = "url('" + eventConfig.bannerUrl + "')";
             document.getElementById('banner-img').src = eventConfig.bannerUrl;
         }
+
         if(typeof localImages !== 'undefined') initGallery(localImages);
         if(typeof localPlaylist !== 'undefined') initMusic(localPlaylist);
       } catch (error) {
-        console.error(error);
+        console.error("相簿初始化發生錯誤:", error);
+        document.getElementById('loading-text').innerText = "系統遇到小亂流，請直接點擊進入按鈕 😅";
       }
     });
 
-    // === 音樂邏輯 ===
+    // === 音樂播放邏輯 ===
     function initMusic(data) {
-      if (data && data.length > 0) { document.getElementById('music-player-ui').style.display = 'flex'; loadAudioTrack(0); }
+      if (data && data.length > 0) {
+        document.getElementById('music-player-ui').style.display = 'flex';
+        loadAudioTrack(0); 
+      }
     }
+
     function loadAudioTrack(index) {
       if (index >= localPlaylist.length) index = 0; 
       currentAudioIndex = index;
@@ -139,32 +284,37 @@
       document.getElementById('track-name').innerText = localPlaylist[index].name;
       updatePlayBtnState(false);
     }
-    myAudio.addEventListener('ended', function() { loadAudioTrack(currentAudioIndex + 1); myAudio.play().catch(e=>console.log(e)); });
-    function toggleMusic() { myAudio.paused ? myAudio.play().then(()=>updatePlayBtnState(true)) : (myAudio.pause(), updatePlayBtnState(false)); }
-    function updatePlayBtnState(isPlaying) { document.getElementById('play-btn-icon').innerText = isPlaying ? "⏸️" : "▶️"; }
 
-    // === 🌟 拯救記憶體：虛擬滾動相簿邏輯 ===
-    window.openOverlay = function(url) {
-      document.getElementById('overlay-img').src = url;
-      document.getElementById('overlay').style.display = 'flex';
-      if (mySwiper && mySwiper.autoplay) mySwiper.autoplay.stop();
-    };
-    
-    window.closeOverlay = function() {
-      document.getElementById('overlay').style.display = 'none';
-      if (mySwiper && mySwiper.autoplay) mySwiper.autoplay.start();
-    };
+    myAudio.addEventListener('ended', function() {
+      loadAudioTrack(currentAudioIndex + 1); 
+      myAudio.play().catch(e => console.log(e)); 
+    });
 
+    function toggleMusic() {
+      if (myAudio.paused) {
+        myAudio.play().then(() => updatePlayBtnState(true)).catch(e => console.log(e));
+      } else {
+        myAudio.pause();
+        updatePlayBtnState(false);
+      }
+    }
+
+    function updatePlayBtnState(isPlaying) {
+      document.getElementById('play-btn-icon').innerText = isPlaying ? "⏸️" : "▶️";
+    }
+
+    // === 相簿生成邏輯 ===
     function initGallery(data) {
       if (!data || data.length === 0) return;
 
       document.getElementById('swiper-area').style.display = 'block';
       document.getElementById('month-nav').style.display = 'flex';
+      
+      var wrapper = document.getElementById('swiper-wrapper');
       var navContainer = document.getElementById('month-nav');
       var currentMonth = null;
 
       data.forEach(function(img, index) {
-        // 建立月份導航列
         if (img.monthLabel !== currentMonth) {
           if (!(img.monthLabel in monthStartIndex)) {
             monthStartIndex[img.monthLabel] = index;
@@ -172,53 +322,92 @@
             btn.className = 'month-btn';
             btn.innerText = img.monthLabel;
             btn.id = 'btn-month-' + img.monthLabel;
-            btn.onclick = function() { if(mySwiper) { mySwiper.slideTo(index); mySwiper.autoplay.start(); }};
+            btn.onclick = function() { 
+                if(mySwiper) {
+                    mySwiper.slideTo(index); 
+                    mySwiper.autoplay.start(); 
+                }
+            };
             navContainer.appendChild(btn);
           }
           currentMonth = img.monthLabel;
         }
 
-        // 🌟 關鍵：將每張幻燈片寫成 HTML「字串」，讓 Swiper 引擎來決定何時渲染
-        var imgUrl = isLocal ? img.highUrl : img.thumbUrl;
-        var slideHTML = `
-          <div class="swiper-slide">
-            <div class="folder-badge">${img.folderName}</div>
-            <img class="main-photo" src="${imgUrl}" onclick="openOverlay('${imgUrl}')">
-            <div class="photo-name">${img.folderName}</div>
-          </div>
-        `;
-        virtualSlidesData.push(slideHTML);
-      });
-
-      // 初始化 3D 引擎，並掛載 Virtual Module
-      mySwiper = new Swiper(".mySwiper", {
-        initialSlide: 0, effect: "coverflow", grabCursor: true, centeredSlides: true, slidesPerView: "auto", 
-        coverflowEffect: { rotate: 15, stretch: -15, depth: 400, modifier: 1, slideShadows: true },
-        autoplay: false, 
+        var slide = document.createElement('div'); 
+        slide.className = 'swiper-slide'; 
         
-        // 🌟 啟動虛擬滾動 (Virtual Slides)！永遠只載入目前與前後共 5 張照片！
-        virtual: {
-          slides: virtualSlidesData,
-          addSlidesBefore: 2, 
-          addSlidesAfter: 2,  
-        },
+        var badgeEl = document.createElement('div');
+        badgeEl.className = 'folder-badge';
+        badgeEl.innerText = img.folderName; 
 
-        pagination: { el: ".swiper-pagination", type: "fraction" },
-        navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
-        on: { slideChange: updateActiveMonthBtn }
+        var bgBlurEl = document.createElement('div');
+        bgBlurEl.className = 'slide-bg-blur';
+        bgBlurEl.style.backgroundImage = "url('" + encodeURI(img.thumbUrl) + "')";
+
+        var imageEl = document.createElement('img'); 
+        imageEl.className = 'main-photo';
+        imageEl.src = isLocal ? img.highUrl : img.thumbUrl; 
+        imageEl.loading = "lazy"; 
+        
+        imageEl.onclick = function() {
+          document.getElementById('overlay-img').src = isLocal ? img.highUrl : img.thumbUrl;
+          document.getElementById('overlay').style.display = 'flex';
+          if (mySwiper && mySwiper.autoplay) mySwiper.autoplay.stop(); 
+        };
+
+        var nameEl = document.createElement('div'); 
+        nameEl.className = 'photo-name'; 
+        nameEl.innerText = img.folderName; 
+
+        slide.appendChild(badgeEl); 
+        slide.appendChild(bgBlurEl); 
+        slide.appendChild(imageEl);  
+        slide.appendChild(nameEl);
+        wrapper.appendChild(slide);
       });
-      updateActiveMonthBtn(); 
+
+      // 🌟 使用 Try-Catch 防禦 Swiper 載入失敗的問題
+      try {
+          mySwiper = new Swiper(".mySwiper", {
+            initialSlide: 0, effect: "coverflow", grabCursor: true, centeredSlides: true, slidesPerView: "auto", 
+            coverflowEffect: { rotate: 15, stretch: -15, depth: 400, modifier: 1, slideShadows: true },
+            autoplay: false, // 🛑 關閉預設自動播放，等點擊後再啟動
+            observer: true,       
+            observeParents: true, 
+            pagination: { el: ".swiper-pagination", type: "fraction" },
+            navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
+            on: { slideChange: updateActiveMonthBtn }
+          });
+          updateActiveMonthBtn(); 
+      } catch (swiperError) {
+          console.error("3D 引擎初始化失敗:", swiperError);
+      }
     }
 
-    // 進入展廳按鈕
+    // 🌟 點擊「進入展廳」按鈕事件 (針對 iOS/iPadOS 優化)
     document.getElementById('enter-btn').onclick = function() {
+      
+      // 1. 處理音樂 (iOS 關鍵：先 load 再 play)
       if (typeof localPlaylist !== 'undefined' && localPlaylist.length > 0) {
-        myAudio.load(); myAudio.play().then(() => updatePlayBtnState(true)).catch(e=>{});
+        myAudio.load(); 
+        myAudio.play().then(() => {
+          updatePlayBtnState(true);
+        }).catch(e => {
+          console.log("iOS 音樂自動播放受阻:", e);
+        });
       }
+
+      // 2. 淡出歡迎畫面
       var ws = document.getElementById('welcome-screen');
       ws.style.opacity = '0';
       setTimeout(() => ws.style.display = 'none', 600);
-      if (mySwiper) { mySwiper.update(); mySwiper.slideTo(0); mySwiper.autoplay.start(); }
+
+      // 3. 處理輪播圖並強制更新畫面
+      if (mySwiper) {
+        mySwiper.update(); 
+        mySwiper.slideTo(0); 
+        mySwiper.autoplay.start();
+      }
     };
 
     function updateActiveMonthBtn() {
@@ -226,12 +415,34 @@
       var currentIndex = mySwiper.activeIndex;
       if (!localImages[currentIndex]) return;
       
+      var currentLabel = localImages[currentIndex].monthLabel;
       var btns = document.querySelectorAll('.month-btn');
       btns.forEach(b => b.classList.remove('active'));
-      var activeBtn = document.getElementById('btn-month-' + localImages[currentIndex].monthLabel);
+      
+      var activeBtn = document.getElementById('btn-month-' + currentLabel);
       if (activeBtn) {
         activeBtn.classList.add('active');
         activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
+
+    // 關閉大圖覆蓋層
+    document.getElementById('overlay').onclick = function() {
+      this.style.display = 'none';
+      if (mySwiper && mySwiper.autoplay) mySwiper.autoplay.start(); 
+    };
+
+    // 全螢幕切換
+    function toggleFullScreen() {
+      var doc = window.document;
+      var docEl = doc.documentElement;
+      var requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+      var cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+
+      if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+        if(requestFullScreen) requestFullScreen.call(docEl); 
+      } else {
+        if(cancelFullScreen) cancelFullScreen.call(doc); 
       }
     }
   </script>
