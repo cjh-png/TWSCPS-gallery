@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>線上影展 - 優化版</title>
+  <title>線上影展 - 虛擬列表 (全螢幕+序號修復)</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
   
@@ -19,6 +19,8 @@
       background-color: var(--bg-color); 
       color: #fff; 
       overflow-x: hidden; 
+      /* 👇 增加網頁底部的空白空間，讓圖片可以被滑到螢幕正中間 */
+      padding-bottom: 30vh; 
     }
 
     /* === 1. Banner === */
@@ -48,24 +50,30 @@
     }
 
     /* === 4. Swiper 容器 === */
-    .swiper-outer { position: relative; padding-bottom: 40px; } /* 為下方序號留空間 */
+    .swiper-outer { position: relative; }
 
     .swiper { 
       width: 100%; height: 60vh; min-height: 300px; background: #000; border-radius: 10px;
+      transition: all 0.3s ease; /* 讓全螢幕切換有動畫 */
     }
+    
+    /* 👇 專門給 iPad 用的「完美全螢幕」樣式 */
+    .swiper.pseudo-fullscreen {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      z-index: 9999; margin: 0; border-radius: 0;
+    }
+
     .swiper-slide { 
       display: flex; align-items: center; justify-content: center;
       position: relative; 
     }
     
-    /* === 5. 左上角資料夾標籤 (加大字體) === */
+    /* === 5. 左上角資料夾標籤 === */
     .folder-badge {
       position: absolute; top: 20px; left: 20px; 
       background: rgba(0, 0, 0, 0.7); color: white;
       padding: 8px 20px; border-radius: 25px; 
-      font-weight: bold; 
-      font-size: 20px; /* 從 13px 大幅增加到 20px */
-      z-index: 10; 
+      font-weight: bold; font-size: 20px; z-index: 10; 
       border-left: 5px solid var(--primary-color);
       box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
@@ -74,15 +82,24 @@
       max-width: 100%; max-height: 100%; object-fit: contain; 
     }
 
-    /* === 6. 序號與總數文字 (放在圖片下方) === */
-    .swiper-pagination-fraction { 
-      position: absolute; bottom: -35px !important; /* 移出 Swiper 框框 */
-      color: #aaa; font-weight: bold; font-size: 16px; 
+    /* === 6. 全螢幕按鈕 === */
+    .fullscreen-btn {
+      position: absolute; bottom: 20px; right: 20px; z-index: 50;
+      background: rgba(0, 0, 0, 0.6); color: white; border: 1px solid #888;
+      padding: 8px 15px; border-radius: 8px; cursor: pointer;
+      font-size: 16px; font-weight: bold; display: flex; align-items: center; gap: 5px;
+    }
+    .fullscreen-btn:hover { background: rgba(0, 0, 0, 0.9); }
+
+    /* === 7. 序號與總數文字 (移到圖片外部) === */
+    .custom-pagination { 
+      text-align: center; color: #ccc; font-weight: bold; font-size: 18px; 
+      margin-top: 15px; /* 與圖片保持距離 */
     }
     
     .swiper-button-next, .swiper-button-prev { color: white; }
 
-    /* === 7. 背景音樂按鈕 === */
+    /* === 8. 背景音樂按鈕 === */
     .music-control {
       position: fixed; bottom: 20px; right: 20px; z-index: 100;
       background: rgba(0, 86, 179, 0.8); color: white;
@@ -119,10 +136,14 @@
     <div class="swiper-outer">
         <div class="swiper mySwiper" style="display: none;" id="swiper-area">
           <div class="swiper-wrapper"></div>
-          <div class="swiper-pagination"></div>
+          
           <div class="swiper-button-next"></div>
           <div class="swiper-button-prev"></div>
+          
+          <button id="fs-btn" class="fullscreen-btn" onclick="toggleFullscreen()">⛶ 全螢幕</button>
         </div>
+        
+        <div class="custom-pagination" id="custom-pagination" style="display: none;"></div>
     </div>
   </div>
 
@@ -134,6 +155,8 @@
     var monthStartIndex = {}; 
     var audio = document.getElementById('bg-music');
     var musicBtn = document.getElementById('music-btn');
+    var swiperArea = document.getElementById('swiper-area');
+    var isFullscreen = false;
     
     var isLocal = window.location.protocol === 'file:' || 
                   window.location.hostname === 'localhost' || 
@@ -148,15 +171,9 @@
       if(typeof localImages !== 'undefined') {
           initGallery(localImages);
       }
-      
-      // 嘗試點擊任何地方後播放音樂 (因應瀏覽器政策)
-      document.body.addEventListener('click', function() {
-          if (audio.paused && !audio.ended) {
-              // audio.play(); // 如果想強制一進來就播可以開啟，但建議讓使用者點音樂鈕
-          }
-      }, { once: true });
     });
 
+    // 音樂開關
     function toggleMusic() {
       if (audio.paused) {
         audio.play();
@@ -169,10 +186,29 @@
       }
     }
 
+    // 全螢幕開關 (CSS 覆蓋法，iPad 100% 支援)
+    function toggleFullscreen() {
+      var fsBtn = document.getElementById('fs-btn');
+      if (!isFullscreen) {
+        swiperArea.classList.add('pseudo-fullscreen');
+        fsBtn.innerHTML = '✖ 退出全螢幕';
+        isFullscreen = true;
+      } else {
+        swiperArea.classList.remove('pseudo-fullscreen');
+        fsBtn.innerHTML = '⛶ 全螢幕';
+        isFullscreen = false;
+      }
+      // 全螢幕切換後，告訴 Swiper 重新計算大小
+      if(mySwiper) {
+        setTimeout(function() { mySwiper.update(); }, 300);
+      }
+    }
+
     function initGallery(data) {
       if (!data || data.length === 0) return;
 
       document.getElementById('swiper-area').style.display = 'block';
+      document.getElementById('custom-pagination').style.display = 'block';
       document.getElementById('month-nav').style.display = 'flex';
       
       var navContainer = document.getElementById('month-nav');
@@ -209,10 +245,13 @@
         slidesPerView: 1, 
         spaceBetween: 20, 
         navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
+        
+        // 👇 將分頁器綁定到外部的 div
         pagination: { 
-            el: ".swiper-pagination", 
-            type: "fraction" // 啟用 1 / 50 格式
+            el: "#custom-pagination", 
+            type: "fraction" 
         },
+        
         autoplay: { delay: 3000, disableOnInteraction: false },
         
         virtual: {
