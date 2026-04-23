@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>線上影展 - 極簡測試版 (高相容性 + 資料夾標籤)</title>
+  <title>線上影展 - 虛擬列表終極測試版</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
   
@@ -53,7 +53,7 @@
     }
     .swiper-slide { 
       display: flex; align-items: center; justify-content: center;
-      position: relative; /* 確保左上角的標籤能準確定位 */
+      position: relative; 
     }
     
     /* === 5. 左上角資料夾標籤 === */
@@ -65,13 +65,8 @@
       border-left: 3px solid var(--primary-color);
     }
     
-    /* 預設圖片透明，載入後才顯示，避免閃爍 */
     .swiper-slide img { 
       max-width: 100%; max-height: 100%; object-fit: contain; 
-      opacity: 0; transition: opacity 0.3s;
-    }
-    .swiper-slide img.loaded {
-      opacity: 1;
     }
     
     .swiper-pagination-fraction { color: #fff; font-weight: bold; }
@@ -95,7 +90,7 @@
     <div class="month-nav-container" id="month-nav" style="display: none;"></div>
     
     <div class="swiper mySwiper" style="display: none;" id="swiper-area">
-      <div class="swiper-wrapper" id="swiper-wrapper"></div>
+      <div class="swiper-wrapper"></div>
       <div class="swiper-pagination"></div>
       <div class="swiper-button-next"></div>
       <div class="swiper-button-prev"></div>
@@ -131,81 +126,66 @@
       document.getElementById('swiper-area').style.display = 'block';
       document.getElementById('month-nav').style.display = 'flex';
       
-      var wrapper = document.getElementById('swiper-wrapper');
       var navContainer = document.getElementById('month-nav');
       var currentMonth = null;
 
-      data.forEach(function(img, index) {
-        if (img.monthLabel !== currentMonth) {
-          if (!(img.monthLabel in monthStartIndex)) {
-            monthStartIndex[img.monthLabel] = index;
+      // 1. 建立月份按鈕 (不再一次性建立圖片 DOM)
+      for (var i = 0; i < data.length; i++) {
+        var imgData = data[i];
+        if (imgData.monthLabel !== currentMonth) {
+          if (!(imgData.monthLabel in monthStartIndex)) {
+            monthStartIndex[imgData.monthLabel] = i;
             var btn = document.createElement('button');
             btn.className = 'month-btn';
-            btn.innerText = img.monthLabel;
-            btn.id = 'btn-month-' + img.monthLabel;
-            btn.onclick = function() { 
-                if(mySwiper) {
-                  mySwiper.slideTo(index);
-                  if(mySwiper.autoplay) mySwiper.autoplay.start(); 
-                }
-            };
+            btn.innerText = imgData.monthLabel;
+            btn.id = 'btn-month-' + imgData.monthLabel;
+            
+            // 使用 ES5 閉包確保點擊時抓到正確的索引值
+            (function(index) {
+              btn.onclick = function() { 
+                  if(mySwiper) {
+                    mySwiper.slideTo(index, 0); // 跳轉到該月份
+                    if(mySwiper.autoplay && mySwiper.autoplay.running) {
+                        mySwiper.autoplay.start(); 
+                    }
+                  }
+              };
+            })(i);
+            
             navContainer.appendChild(btn);
           }
-          currentMonth = img.monthLabel;
-        }
-
-        var imgUrl = isLocal ? img.highUrl : img.thumbUrl;
-        var slide = document.createElement('div');
-        slide.className = 'swiper-slide';
-        
-        // 🚨【相容性修復】：放棄新版反引號語法，改回最傳統的加號串接字串
-        slide.innerHTML = '<div class="folder-badge">' + img.folderName + '</div>' +
-                          '<img data-src="' + imgUrl + '" alt="' + img.folderName + '">';
-        
-        wrapper.appendChild(slide);
-      });
-
-      function loadNearbyImages() {
-        if (!mySwiper || !mySwiper.slides) return;
-        var activeIdx = mySwiper.activeIndex;
-        var slides = mySwiper.slides;
-        
-        var start = Math.max(0, activeIdx - 2);
-        var end = Math.min(slides.length - 1, activeIdx + 2);
-        
-        for (var i = start; i <= end; i++) {
-          var s = slides[i];
-          if (!s) continue;
-          
-          var img = s.querySelector('img');
-          if (img && img.getAttribute('data-src')) {
-            img.src = img.getAttribute('data-src');
-            img.removeAttribute('data-src');
-            img.onload = function() {
-              this.classList.add('loaded'); 
-            }
-          }
+          currentMonth = imgData.monthLabel;
         }
       }
 
+      // 2. 初始化 Swiper 虛擬模式 (Virtual)
       mySwiper = new Swiper(".mySwiper", {
         slidesPerView: 1, 
         spaceBetween: 20, 
         navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
         pagination: { el: ".swiper-pagination", type: "fraction" },
+        autoplay: { delay: 2000, disableOnInteraction: false },
         
-        autoplay: {
-          delay: 2000, 
-          disableOnInteraction: false, 
+        // 🌟 核心記憶體優化：開啟虛擬幻燈片
+        virtual: {
+          slides: data,
+          renderSlide: function (slideData, index) {
+            var imgUrl = isLocal ? slideData.highUrl : slideData.thumbUrl;
+            
+            // 安全過濾：如果有雙引號，把它轉換掉，避免破壞 HTML
+            var safeFolderName = slideData.folderName ? slideData.folderName.replace(/"/g, '&quot;') : '';
+
+            // 動態生成 HTML (Swiper 會自動控制只渲染附近的幾張，自動刪除滑過的標籤)
+            return '<div class="swiper-slide">' +
+                     '<div class="folder-badge">' + safeFolderName + '</div>' +
+                     '<img src="' + imgUrl + '" alt="' + safeFolderName + '">' +
+                   '</div>';
+          }
         },
         
         on: { 
-          init: function () {
-            setTimeout(loadNearbyImages, 50); 
-          },
           slideChange: function () { 
             updateActiveMonthBtn(); 
-            loadNearbyImages();
           }
         }
       });
@@ -221,7 +201,6 @@
       var currentLabel = localImages[currentIndex].monthLabel;
       var btns = document.querySelectorAll('.month-btn');
       
-      // 🚨【相容性修復】：拔除箭頭函式 (=>)，改用傳統 for 迴圈
       for (var i = 0; i < btns.length; i++) {
         btns[i].classList.remove('active');
       }
