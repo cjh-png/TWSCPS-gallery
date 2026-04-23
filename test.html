@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>線上影展 - 極簡測試版 (自動播放 + 資料夾標籤)</title>
+  <title>線上影展 - 極簡測試版 (高相容性 + 資料夾標籤)</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
   
@@ -158,11 +158,10 @@
         var slide = document.createElement('div');
         slide.className = 'swiper-slide';
         
-        // 延遲載入機制 + 左上角標籤
-        slide.innerHTML = `
-          <div class="folder-badge">${img.folderName}</div>
-          <img data-src="${imgUrl}" alt="${img.folderName}">
-        `;
+        // 🚨【相容性修復】：放棄新版反引號語法，改回最傳統的加號串接字串
+        slide.innerHTML = '<div class="folder-badge">' + img.folderName + '</div>' +
+                          '<img data-src="' + imgUrl + '" alt="' + img.folderName + '">';
+        
         wrapper.appendChild(slide);
       });
 
@@ -221,7 +220,11 @@
       
       var currentLabel = localImages[currentIndex].monthLabel;
       var btns = document.querySelectorAll('.month-btn');
-      btns.forEach(b => b.classList.remove('active'));
+      
+      // 🚨【相容性修復】：拔除箭頭函式 (=>)，改用傳統 for 迴圈
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].classList.remove('active');
+      }
       
       var activeBtn = document.getElementById('btn-month-' + currentLabel);
       if (activeBtn) {
