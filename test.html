@@ -372,6 +372,14 @@
             coverflowEffect: { rotate: 15, stretch: -15, depth: 400, modifier: 1, slideShadows: true },
             pagination: { el: ".swiper-pagination", type: "fraction" },
             navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
+            
+            // 👇 這是加回來的自動播放設定！
+            autoplay: {
+              delay: 3000,                 // 停留在每張照片的時間 (3000 = 3秒，可自行修改)
+              disableOnInteraction: false, // 設為 false 代表使用者手動滑動後，它還是會繼續自動播放
+            },
+            // 👆 加回來的自動播放設定結束
+            
             on: { 
               init: function () {
                 setTimeout(lazyLoadNearby, 50); // 一開始先喚醒前幾張
@@ -386,7 +394,6 @@
       } catch (swiperError) {
           console.error("3D 引擎初始化失敗:", swiperError);
       }
-    }
 
     document.getElementById('enter-btn').onclick = function() {
       if (typeof localPlaylist !== 'undefined' && localPlaylist.length > 0) {
