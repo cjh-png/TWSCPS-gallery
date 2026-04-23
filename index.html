@@ -142,12 +142,27 @@
     }
     .welcome-title { font-size: 28px; font-weight: bold; margin-bottom: 20px; letter-spacing: 2px; text-align: center; padding: 0 20px;}
     #loading-text { color: #999; font-size: 16px; margin-bottom: 20px; text-align: center; }
+    
+/* 🌟 改用純 CSS 動畫強制顯示按鈕，完全不依賴 JavaScript */
+    @keyframes forceShow {
+      0% { opacity: 0; pointer-events: none; }
+      90% { opacity: 0; pointer-events: none; }
+      100% { opacity: 1; pointer-events: auto; }
+    }
+    
     #enter-btn {
       padding: 12px 35px; font-size: 18px; font-weight: bold; border-radius: 30px;
       background: var(--primary-color); color: white; border: none; cursor: pointer;
-      box-shadow: 0 4px 15px rgba(0,86,179,0.5); display: none; transition: transform 0.2s;
+      box-shadow: 0 4px 15px rgba(0,86,179,0.5); transition: transform 0.2s;
+      /* 取消原本的 display: none，改用動畫在 2 秒後浮現 */
+      opacity: 0; pointer-events: none; 
+      animation: forceShow 2s forwards; 
     }
     #enter-btn:hover { transform: scale(1.05); }
+    
+    /* 錯誤訊息專用樣式 */
+    #error-log { color: #ff6b6b; font-size: 14px; margin-top: 15px; text-align: center; max-width: 80%; word-wrap: break-word;}
+
 
     @media (max-width: 600px) {
         .main-content { margin: -10px auto 30px auto; padding: 5px; }
@@ -161,7 +176,19 @@
         .fullscreen-btn { bottom: 15px; left: 15px; width: 36px; height: 36px; font-size: 16px; } 
     }
   </style>
-  
+  <script>
+    // 🌟 終極抓漏探測器：如果有任何程式碼當機，直接印在手機畫面上！
+    window.onerror = function(message, source, lineno, colno, error) {
+      var logDiv = document.getElementById('error-log');
+      if (!logDiv) {
+        logDiv = document.createElement('div');
+        logDiv.id = 'error-log';
+        document.getElementById('welcome-screen').appendChild(logDiv);
+      }
+      logDiv.innerHTML += "⚠️ 錯誤報告: " + message + " (行數: " + lineno + ")<br>";
+      return false; 
+    };
+  </script>
 </head>
 <body>
 
