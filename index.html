@@ -339,19 +339,27 @@
     }
 
     // 🌟 點擊「進入展廳」按鈕的事件
+    // 🌟 針對 iPhone + 嵌入環境優化的點擊邏輯
     document.getElementById('enter-btn').onclick = function() {
-      // 1. 淡出歡迎畫面
+      // 1. 處理音樂 (iOS 關鍵：先 load 再 play)
+      if (localPlaylist.length > 0) {
+        myAudio.load(); // 告訴 iOS 準備好要放音樂了
+        myAudio.play().then(() => {
+          updatePlayBtnState(true);
+        }).catch(e => {
+          console.log("iOS 音樂自動播放受阻:", e);
+        });
+      }
+
+      // 2. 淡出歡迎畫面
       var ws = document.getElementById('welcome-screen');
       ws.style.opacity = '0';
       setTimeout(() => ws.style.display = 'none', 600);
 
-      // 2. 啟動音樂 (因為是使用者點擊觸發，瀏覽器絕對不會阻擋)
-      if (myAudio.paused && localPlaylist.length > 0) {
-        myAudio.play().then(() => updatePlayBtnState(true)).catch(e => console.log(e));
-      }
-
-      // 3. 啟動輪播圖自動播放
+      // 3. 處理輪播圖
       if (mySwiper) {
+        mySwiper.update(); // 🌟 強制 iPhone 重新計算 3D 空間位置
+        mySwiper.slideTo(0); // 確保回到起點
         mySwiper.autoplay.start();
       }
     };

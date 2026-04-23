@@ -13,7 +13,7 @@ let localPlaylist = [];
 if (!fs.existsSync(thumbsDir)) fs.mkdirSync(thumbsDir, { recursive: true });
 
 async function buildGallery() {
-    console.log("🚀 開始處理圖片與縮圖 (WebP 高效模式)...");
+    console.log("🚀 開始處理圖片與縮圖 (已修正旋轉問題)...");
 
     if (fs.existsSync(imagesDir)) {
         const items = fs.readdirSync(imagesDir);
@@ -32,25 +32,24 @@ async function buildGallery() {
                 for (const file of files) {
                     if (file.match(/\.(jpg|jpeg|png|webp)$/i)) {
                         const originalPath = path.join(itemPath, file);
-                        
-                        // 🌟 關鍵修正：將縮圖檔名強制改為 .webp
                         const webpFileName = file.replace(/\.(jpg|jpeg|png)$/i, '.webp');
                         const thumbPath = path.join(thumbFolderPath, webpFileName);
 
                         try {
                             if (!fs.existsSync(thumbPath)) {
-                                console.log(`📸 壓縮中: ${item}/${webpFileName}`);
+                                console.log(`📸 壓縮並修正旋轉: ${item}/${file}`);
                                 await sharp(originalPath)
-                                    .resize({ width: 1200, withoutEnlargement: true }) // 1200px 高清解析度
-                                    .webp({ quality: 80 }) // 轉為 WebP，品質 80
+                                    .rotate() // 🌟 關鍵修正：依照 EXIF 標記，在壓縮前將實體圖片旋轉正！
+                                    .resize({ width: 1200, withoutEnlargement: true }) 
+                                    .webp({ quality: 80 }) 
                                     .toFile(thumbPath);
                             }
 
                             localImages.push({
                                 folderName: item,
                                 monthLabel: monthLabel,
-                                highUrl: `./images/${item}/${file}`,      // 本地看原圖 (保留原始檔名)
-                                thumbUrl: `./thumbs/${item}/${webpFileName}` // 線上看縮圖 (使用 WebP 檔名)
+                                highUrl: `./images/${item}/${file}`,      
+                                thumbUrl: `./thumbs/${item}/${webpFileName}` 
                             });
                         } catch (error) {
                             console.log(`⚠️ 警告：無法讀取圖片 ${item}/${file}，已自動跳過！`);
@@ -70,7 +69,8 @@ async function buildGallery() {
         });
     }
 
-    const dataJsContent = `// 此檔案由 build.js 自動生成
+    const dataJsContent = `// 此檔案由 build.js 自動生成，請勿手動修改
+// 生成時間: ${new Date().toLocaleString('zh-TW')}
 const eventConfig = { 
     activityName: "慈天相片影展", 
     bannerUrl: "./images/banner.jpg" 
