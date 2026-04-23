@@ -133,15 +133,15 @@
     }
     #overlay img { max-width: 95%; max-height: 95%; object-fit: contain; border-radius: 8px; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
 
-    /* 🌟 全新歡迎/載入遮罩 (解決音樂與渲染問題) */
+    /* 🌟 全新歡迎/載入遮罩 */
     #welcome-screen {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: var(--bg-color); z-index: 99999;
       display: flex; flex-direction: column; justify-content: center; align-items: center;
       transition: opacity 0.6s ease;
     }
-    .welcome-title { font-size: 28px; font-weight: bold; margin-bottom: 20px; letter-spacing: 2px; }
-    #loading-text { color: #999; font-size: 16px; margin-bottom: 20px; }
+    .welcome-title { font-size: 28px; font-weight: bold; margin-bottom: 20px; letter-spacing: 2px; text-align: center; padding: 0 20px;}
+    #loading-text { color: #999; font-size: 16px; margin-bottom: 20px; text-align: center; }
     #enter-btn {
       padding: 12px 35px; font-size: 18px; font-weight: bold; border-radius: 30px;
       background: var(--primary-color); color: white; border: none; cursor: pointer;
@@ -166,14 +166,14 @@
 <body>
 
   <div id="welcome-screen">
-    <div class="welcome-title" id="welcome-title-text">載入中...</div>
+    <div class="welcome-title" id="welcome-title-text">活動載入中...</div>
     <div id="loading-text">✨ 正在為您佈置 3D 展廳，請稍候...</div>
     <button id="enter-btn">進入展廳</button>
   </div>
 
   <div class="banner-container">
     <div class="banner-bg-blur" id="banner-blur"></div>
-    <img src="" id="banner-img" class="banner-new-photo" alt="活動影展 Banner">
+    <img src="" id="banner-img" class="banner-new-photo" alt="活動影展 Banner" onerror="this.style.display='none'">
   </div>
 
   <div class="main-content">
@@ -202,27 +202,45 @@
 
   <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
   <script src="./data.js"></script> 
+  
   <script>
     var mySwiper = null;
     var monthStartIndex = {}; 
     var currentAudioIndex = 0;
     var myAudio = new Audio();
-    var galleryLoaded = false;
-
+    
+    // 檢查是否為本地預覽
     var isLocal = window.location.protocol === 'file:' || 
                   window.location.hostname === 'localhost' || 
                   window.location.hostname === '127.0.0.1';
 
-    window.onload = function() {
-      document.title = eventConfig.activityName;
-      document.getElementById('activity-title').innerText = eventConfig.activityName;
-      document.getElementById('welcome-title-text').innerText = eventConfig.activityName;
-      document.getElementById('banner-blur').style.backgroundImage = "url('" + eventConfig.bannerUrl + "')";
-      document.getElementById('banner-img').src = eventConfig.bannerUrl;
+    // 🌟 核心保命機制與初始化：不使用 window.onload，改用 DOMContentLoaded
+    document.addEventListener("DOMContentLoaded", function() {
+      
+      // 🛡️ 保命機制：不管圖片是否下載卡住，1.5秒後絕對強制顯示「進入按鈕」
+      setTimeout(() => {
+        var loadingText = document.getElementById('loading-text');
+        var enterBtn = document.getElementById('enter-btn');
+        if(loadingText) loadingText.style.display = 'none';
+        if(enterBtn) enterBtn.style.display = 'block';
+      }, 1500);
 
-      initGallery(localImages);
-      initMusic(localPlaylist);
-    };
+      try {
+        if(typeof eventConfig !== 'undefined') {
+            document.title = eventConfig.activityName;
+            document.getElementById('activity-title').innerText = eventConfig.activityName;
+            document.getElementById('welcome-title-text').innerText = eventConfig.activityName;
+            document.getElementById('banner-blur').style.backgroundImage = "url('" + eventConfig.bannerUrl + "')";
+            document.getElementById('banner-img').src = eventConfig.bannerUrl;
+        }
+
+        if(typeof localImages !== 'undefined') initGallery(localImages);
+        if(typeof localPlaylist !== 'undefined') initMusic(localPlaylist);
+      } catch (error) {
+        console.error("相簿初始化發生錯誤:", error);
+        document.getElementById('loading-text').innerText = "系統遇到小亂流，請直接點擊進入按鈕 😅";
+      }
+    });
 
     // === 音樂播放邏輯 ===
     function initMusic(data) {
@@ -238,12 +256,11 @@
       myAudio.src = localPlaylist[index].src;
       document.getElementById('track-name').innerText = localPlaylist[index].name;
       updatePlayBtnState(false);
-      // 🛑 移除了原本會被瀏覽器阻擋的自動播放，改交由進入按鈕觸發
     }
 
     myAudio.addEventListener('ended', function() {
       loadAudioTrack(currentAudioIndex + 1); 
-      myAudio.play().catch(e => console.log(e)); // 下一首自動播放
+      myAudio.play().catch(e => console.log(e)); 
     });
 
     function toggleMusic() {
@@ -261,7 +278,7 @@
 
     // === 相簿生成邏輯 ===
     function initGallery(data) {
-      if (data.length === 0) return;
+      if (!data || data.length === 0) return;
 
       document.getElementById('swiper-area').style.display = 'block';
       document.getElementById('month-nav').style.display = 'flex';
@@ -278,7 +295,12 @@
             btn.className = 'month-btn';
             btn.innerText = img.monthLabel;
             btn.id = 'btn-month-' + img.monthLabel;
-            btn.onclick = function() { mySwiper.slideTo(index); mySwiper.autoplay.start(); };
+            btn.onclick = function() { 
+                if(mySwiper) {
+                    mySwiper.slideTo(index); 
+                    mySwiper.autoplay.start(); 
+                }
+            };
             navContainer.appendChild(btn);
           }
           currentMonth = img.monthLabel;
@@ -317,33 +339,30 @@
         wrapper.appendChild(slide);
       });
 
-      // 🌟 優化 Swiper 初始化參數，防止大量圖片造成的渲染卡頓
-      mySwiper = new Swiper(".mySwiper", {
-        initialSlide: 0, effect: "coverflow", grabCursor: true, centeredSlides: true, slidesPerView: "auto", 
-        coverflowEffect: { rotate: 15, stretch: -15, depth: 400, modifier: 1, slideShadows: true },
-        autoplay: false, // 🛑 關閉預設自動播放，等使用者點擊進入後再開始
-        observer: true,        // 監聽 DOM 變化，自動更新重新排版
-        observeParents: true,  // 監聽父層變化
-        pagination: { el: ".swiper-pagination", type: "fraction" },
-        navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
-        on: { slideChange: updateActiveMonthBtn }
-      });
-      
-      updateActiveMonthBtn(); 
-
-      // 🌟 排版完成後，隱藏「載入中」，顯示「進入展廳」按鈕
-      setTimeout(() => {
-        document.getElementById('loading-text').style.display = 'none';
-        document.getElementById('enter-btn').style.display = 'block';
-      }, 800); // 稍微延遲 0.8 秒，確保瀏覽器有足夠時間畫出 500 張圖的骨架
+      // 🌟 使用 Try-Catch 防禦 Swiper 載入失敗的問題
+      try {
+          mySwiper = new Swiper(".mySwiper", {
+            initialSlide: 0, effect: "coverflow", grabCursor: true, centeredSlides: true, slidesPerView: "auto", 
+            coverflowEffect: { rotate: 15, stretch: -15, depth: 400, modifier: 1, slideShadows: true },
+            autoplay: false, // 🛑 關閉預設自動播放，等點擊後再啟動
+            observer: true,       
+            observeParents: true, 
+            pagination: { el: ".swiper-pagination", type: "fraction" },
+            navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
+            on: { slideChange: updateActiveMonthBtn }
+          });
+          updateActiveMonthBtn(); 
+      } catch (swiperError) {
+          console.error("3D 引擎初始化失敗:", swiperError);
+      }
     }
 
-    // 🌟 點擊「進入展廳」按鈕的事件
-    // 🌟 針對 iPhone + 嵌入環境優化的點擊邏輯
+    // 🌟 點擊「進入展廳」按鈕事件 (針對 iOS/iPadOS 優化)
     document.getElementById('enter-btn').onclick = function() {
+      
       // 1. 處理音樂 (iOS 關鍵：先 load 再 play)
-      if (localPlaylist.length > 0) {
-        myAudio.load(); // 告訴 iOS 準備好要放音樂了
+      if (typeof localPlaylist !== 'undefined' && localPlaylist.length > 0) {
+        myAudio.load(); 
         myAudio.play().then(() => {
           updatePlayBtnState(true);
         }).catch(e => {
@@ -356,16 +375,16 @@
       ws.style.opacity = '0';
       setTimeout(() => ws.style.display = 'none', 600);
 
-      // 3. 處理輪播圖
+      // 3. 處理輪播圖並強制更新畫面
       if (mySwiper) {
-        mySwiper.update(); // 🌟 強制 iPhone 重新計算 3D 空間位置
-        mySwiper.slideTo(0); // 確保回到起點
+        mySwiper.update(); 
+        mySwiper.slideTo(0); 
         mySwiper.autoplay.start();
       }
     };
 
     function updateActiveMonthBtn() {
-      if (!mySwiper || localImages.length === 0) return;
+      if (!mySwiper || typeof localImages === 'undefined' || localImages.length === 0) return;
       var currentIndex = mySwiper.activeIndex;
       if (!localImages[currentIndex]) return;
       
@@ -380,11 +399,13 @@
       }
     }
 
+    // 關閉大圖覆蓋層
     document.getElementById('overlay').onclick = function() {
       this.style.display = 'none';
       if (mySwiper && mySwiper.autoplay) mySwiper.autoplay.start(); 
     };
 
+    // 全螢幕切換
     function toggleFullScreen() {
       var doc = window.document;
       var docEl = doc.documentElement;
@@ -392,9 +413,9 @@
       var cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
 
       if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
-        requestFullScreen.call(docEl); 
+        if(requestFullScreen) requestFullScreen.call(docEl); 
       } else {
-        cancelFullScreen.call(doc); 
+        if(cancelFullScreen) cancelFullScreen.call(doc); 
       }
     }
   </script>
