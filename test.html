@@ -59,9 +59,8 @@
     .swiper { width: 100%; padding-top: 20px; padding-bottom: 70px; }
     
     .swiper-slide { 
-      /* 🌟 核心修復：為虛擬引擎提供明確的寬度，避免計算為 0 */
-      width: 65vw; 
-      max-width: 800px; 
+      /* 🌟 恢復完美排版：讓照片自動決定寬度，並給個基礎寬度防止擠成一團 */
+      width: auto; min-width: 300px; 
       height: 80vh; max-height: 900px; min-height: 400px; 
       background-color: #000; border-radius: 15px; box-shadow: 0 25px 60px rgba(0,0,0,0.6);
       overflow: hidden; position: relative; transition: all 0.3s ease;
@@ -77,17 +76,19 @@
     .swiper-slide img.main-photo { 
       display: block; max-width: 100%; height: 100%; object-fit: contain; 
       position: relative; z-index: 2; box-shadow: 0 0 40px rgba(0,0,0,0.5);
-      cursor: pointer;
-      /* 🌟 核心修復：直接顯示圖片，不依賴 active class，避免虛擬加載延遲 */
-      opacity: 1; 
+      cursor: pointer; opacity: 1; transition: opacity 0.5s ease-in-out;
+    }
+    
+    /* 當圖片還沒被分配到網址時，保持隱藏狀態 */
+    .swiper-slide img.main-photo:not([src]) {
+      opacity: 0;
     }
 
     .folder-badge {
       position: absolute; top: 20px; left: 20px; background: rgba(0, 0, 0, 0.6); color: white;
       padding: 7px 18px; border-radius: 30px; font-weight: bold; font-size: 13px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.4); z-index: 10; backdrop-filter: blur(5px);
-      border-left: 3px solid var(--primary-color); 
-      opacity: 1; 
+      border-left: 3px solid var(--primary-color); opacity: 1;
     }
     
     .photo-name { position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); color: rgba(255,255,255,0.7); font-size: 11px; padding: 40px 15px 15px 15px; text-align: center; z-index: 4; box-sizing: border-box; letter-spacing: 2px;}
@@ -161,13 +162,10 @@
       animation: forceShow 2s forwards; 
     }
     #enter-btn:hover { transform: scale(1.05); }
-    
-    #error-log { color: #ff6b6b; font-size: 14px; margin-top: 15px; text-align: center; max-width: 80%; word-wrap: break-word;}
 
     @media (max-width: 600px) {
         .main-content { margin: -10px auto 30px auto; padding: 5px; }
-        /* 🌟 核心修復：手機版也給予明確寬度 */
-        .swiper-slide { height: 70vh; width: 85vw; } 
+        .swiper-slide { height: 70vh; } 
         .month-nav-container { justify-content: flex-start; padding: 10px; margin-bottom: 10px; gap: 5px;}
         .month-btn { font-size: 13px; padding: 6px 14px; }
         .banner-container { height: 180px; } 
@@ -177,18 +175,6 @@
         .fullscreen-btn { bottom: 15px; left: 15px; width: 36px; height: 36px; font-size: 16px; } 
     }
   </style>
-  <script>
-    window.onerror = function(message, source, lineno, colno, error) {
-      var logDiv = document.getElementById('error-log');
-      if (!logDiv) {
-        logDiv = document.createElement('div');
-        logDiv.id = 'error-log';
-        document.getElementById('welcome-screen').appendChild(logDiv);
-      }
-      logDiv.innerHTML += "⚠️ 錯誤報告: " + message + " (行數: " + lineno + ")<br>";
-      return false; 
-    };
-  </script>
 </head>
 <body>
 
@@ -261,11 +247,9 @@
         if(typeof localPlaylist !== 'undefined') initMusic(localPlaylist);
       } catch (error) {
         console.error("相簿初始化發生錯誤:", error);
-        document.getElementById('loading-text').innerText = "系統遇到小亂流，請直接點擊進入按鈕 😅";
       }
     });
 
-    // === 音樂播放邏輯 ===
     function initMusic(data) {
       if (data && data.length > 0) {
         document.getElementById('music-player-ui').style.display = 'flex';
@@ -299,23 +283,23 @@
       document.getElementById('play-btn-icon').innerText = isPlaying ? "⏸️" : "▶️";
     }
 
-    // 打開大圖功能 
     window.openOverlay = function(url) {
       document.getElementById('overlay-img').src = url;
       document.getElementById('overlay').style.display = 'flex';
-      if (mySwiper && mySwiper.autoplay) mySwiper.autoplay.stop(); 
     }
 
-    // === 相簿生成邏輯 ===
+    // === 相簿生成邏輯 (🌟 獨家動態預載系統) ===
     function initGallery(data) {
       if (!data || data.length === 0) return;
 
       document.getElementById('swiper-area').style.display = 'block';
       document.getElementById('month-nav').style.display = 'flex';
       
+      var wrapper = document.getElementById('swiper-wrapper');
       var navContainer = document.getElementById('month-nav');
       var currentMonth = null;
 
+      // 1. 建立所有框架，但故意不放入真實圖片連結 (使用 data-src 代替)
       data.forEach(function(img, index) {
         if (img.monthLabel !== currentMonth) {
           if (!(img.monthLabel in monthStartIndex)) {
@@ -325,43 +309,78 @@
             btn.innerText = img.monthLabel;
             btn.id = 'btn-month-' + img.monthLabel;
             btn.onclick = function() { 
-                if(mySwiper) {
-                    mySwiper.slideTo(index); 
-                }
+                if(mySwiper) mySwiper.slideTo(index); 
             };
             navContainer.appendChild(btn);
           }
           currentMonth = img.monthLabel;
         }
+
+        var imgUrl = isLocal ? img.highUrl : img.thumbUrl;
+        var safeThumb = encodeURI(img.thumbUrl);
+        var slide = document.createElement('div');
+        slide.className = 'swiper-slide';
+        
+        slide.innerHTML = `
+          <div class="folder-badge">${img.folderName}</div>
+          <div class="slide-bg-blur" data-bg="${safeThumb}"></div>
+          <img class="main-photo" data-src="${imgUrl}" onclick="openOverlay('${imgUrl}')">
+          <div class="photo-name">${img.folderName}</div>
+        `;
+        wrapper.appendChild(slide);
       });
 
-      // 🌟 啟動 Swiper 虛擬引擎
+      // 🌟 2. 智慧預載函數：只負責把滑動到「附近」的照片喚醒！
+      function lazyLoadNearby() {
+        if (!mySwiper || !mySwiper.slides) return;
+        var activeIdx = mySwiper.activeIndex;
+        var slides = mySwiper.slides;
+        
+        // 只喚醒當前畫面的前 2 張，和後 3 張
+        var start = Math.max(0, activeIdx - 2);
+        var end = Math.min(slides.length - 1, activeIdx + 3);
+        
+        for (var i = start; i <= end; i++) {
+          var s = slides[i];
+          if (!s) continue;
+          
+          var img = s.querySelector('.main-photo');
+          var bg = s.querySelector('.slide-bg-blur');
+          
+          // 如果照片還沒被喚醒，就分配真實網址給它
+          if (img && img.getAttribute('data-src')) {
+            img.src = img.getAttribute('data-src');
+            img.removeAttribute('data-src');
+            
+            // 等圖片下載完畢，通知 Swiper 重新調整這張照片的完美寬度
+            img.onload = function() {
+              if (mySwiper) mySwiper.update(); 
+            };
+          }
+          
+          if (bg && bg.getAttribute('data-bg')) {
+            bg.style.backgroundImage = "url('" + bg.getAttribute('data-bg') + "')";
+            bg.removeAttribute('data-bg');
+          }
+        }
+      }
+
+      // 3. 啟動 Swiper 引擎
       try {
           mySwiper = new Swiper(".mySwiper", {
             initialSlide: 0, effect: "coverflow", grabCursor: true, centeredSlides: true, slidesPerView: "auto", 
-            observer: true, observeParents: true, // 監聽 DOM 改變
             coverflowEffect: { rotate: 15, stretch: -15, depth: 400, modifier: 1, slideShadows: true },
-            
-            virtual: {
-              slides: data,
-              cache: false, // 確保每次滑動都正確渲染
-              renderSlide: function (img, index) {
-                var imgUrl = isLocal ? img.highUrl : img.thumbUrl;
-                var safeThumb = encodeURI(img.thumbUrl);
-                return `
-                  <div class="swiper-slide">
-                    <div class="folder-badge">${img.folderName}</div>
-                    <div class="slide-bg-blur" style="background-image: url('${safeThumb}')"></div>
-                    <img class="main-photo" src="${imgUrl}" onclick="openOverlay('${imgUrl}')" loading="lazy">
-                    <div class="photo-name">${img.folderName}</div>
-                  </div>
-                `;
-              }
-            },
-
             pagination: { el: ".swiper-pagination", type: "fraction" },
             navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
-            on: { slideChange: updateActiveMonthBtn }
+            on: { 
+              init: function () {
+                setTimeout(lazyLoadNearby, 50); // 一開始先喚醒前幾張
+              },
+              slideChange: function () {
+                updateActiveMonthBtn();
+                lazyLoadNearby(); // 每次滑動就沿路喚醒後面的照片
+              }
+            }
           });
           updateActiveMonthBtn(); 
       } catch (swiperError) {
@@ -385,10 +404,7 @@
 
       if (mySwiper) {
         mySwiper.update(); 
-        setTimeout(() => {
-            mySwiper.virtual.update(); // 🌟 強制虛擬引擎更新，防止隱藏狀態下的佈局錯誤
-            mySwiper.slideTo(0); 
-        }, 50);
+        mySwiper.slideTo(0); 
       }
     };
 
