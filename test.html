@@ -19,20 +19,16 @@
     /* === Banner === */
     .banner-container { 
       position: relative; width: 100%; height: 260px; 
-      background-color: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; 
-    }
-    .banner-bg-blur { 
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-      background-size: cover; background-position: center; 
-      filter: blur(25px) brightness(0.6); transform: scale(1.1); z-index: 1; 
+      background-color: #000; overflow: hidden; 
     }
     .banner-new-photo { 
-      display: block; max-width: 100%; height: 100%; object-fit: contain; 
-      position: relative; z-index: 2; box-shadow: 0 0 30px rgba(0,0,0,0.5); 
+      display: block; width: 100%; height: 100%; 
+      object-fit: cover; 
+      position: relative; z-index: 2; 
     }
     .banner-overlay { 
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-      background: linear-gradient(to bottom, rgba(0,0,0,0.2), var(--bg-color)); z-index: 3; 
+      position: absolute; bottom: 0; left: 0; width: 100%; height: 30%; 
+      background: linear-gradient(to bottom, transparent, var(--bg-color)); z-index: 3; 
     }
 
     /* === Main Container === */
@@ -59,7 +55,6 @@
     .swiper { width: 100%; padding-top: 20px; padding-bottom: 70px; }
     
     .swiper-slide { 
-      /* 🌟 恢復完美排版：讓照片自動決定寬度，並給個基礎寬度防止擠成一團 */
       width: auto; min-width: 300px; 
       height: 80vh; max-height: 900px; min-height: 400px; 
       background-color: #000; border-radius: 15px; box-shadow: 0 25px 60px rgba(0,0,0,0.6);
@@ -74,15 +69,12 @@
     }
 
     .swiper-slide img.main-photo { 
-      display: block; max-width: 100%; height: 100%; object-fit: contain; 
+      display: block; width: 100%; height: 100%; object-fit: contain; /* 確保圖片適應容器不變形 */
       position: relative; z-index: 2; box-shadow: 0 0 40px rgba(0,0,0,0.5);
       cursor: pointer; opacity: 1; transition: opacity 0.5s ease-in-out;
     }
     
-    /* 當圖片還沒被分配到網址時，保持隱藏狀態 */
-    .swiper-slide img.main-photo:not([src]) {
-      opacity: 0;
-    }
+    .swiper-slide img.main-photo:not([src]) { opacity: 0; }
 
     .folder-badge {
       position: absolute; top: 20px; left: 20px; background: rgba(0, 0, 0, 0.6); color: white;
@@ -114,10 +106,7 @@
       display: flex; justify-content: center; align-items: center; font-size: 14px;
       box-shadow: 0 4px 10px rgba(0,86,179,0.5);
     }
-    .track-info {
-      font-size: 12px; color: #ddd; max-width: 120px; white-space: nowrap;
-      overflow: hidden; text-overflow: ellipsis; font-weight: 500;
-    }
+    .track-info { font-size: 12px; color: #ddd; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
 
     /* 📺 全螢幕按鈕樣式 */
     .fullscreen-btn {
@@ -130,7 +119,6 @@
     }
     .fullscreen-btn:hover { background: var(--primary-color); transform: scale(1.1); }
 
-    /* 🌟 點擊放大的遮罩層 */
     #overlay { 
       position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
       background: rgba(0,0,0,0.95); display: none; justify-content: center; align-items: center; 
@@ -163,12 +151,21 @@
     }
     #enter-btn:hover { transform: scale(1.05); }
 
-    @media (max-width: 600px) {
+    /* 📱 針對 Android 手機和 iPad 的終極響應式修正 */
+    @media (max-width: 820px) {
         .main-content { margin: -10px auto 30px auto; padding: 5px; }
-        .swiper-slide { height: 70vh; } 
+        .banner-container { height: 200px; } 
+        
+        /* 確保幻燈片不會超過螢幕寬度 */
+        .swiper-slide { 
+          width: 85vw !important; /* 強制寬度為螢幕的 85% */
+          min-width: unset; 
+          height: 60vh; 
+          min-height: 300px;
+        } 
+        
         .month-nav-container { justify-content: flex-start; padding: 10px; margin-bottom: 10px; gap: 5px;}
         .month-btn { font-size: 13px; padding: 6px 14px; }
-        .banner-container { height: 180px; } 
         .music-player { bottom: 15px; right: 15px; padding: 6px 12px 6px 6px; }
         .play-btn { width: 34px; height: 34px; }
         .track-info { max-width: 90px; }
@@ -185,8 +182,8 @@
   </div>
 
   <div class="banner-container">
-    <div class="banner-bg-blur" id="banner-blur"></div>
     <img src="" id="banner-img" class="banner-new-photo" alt="活動影展 Banner" onerror="this.style.display='none'">
+    <div class="banner-overlay"></div>
   </div>
 
   <div class="main-content">
@@ -239,7 +236,6 @@
             document.title = eventConfig.activityName;
             document.getElementById('activity-title').innerText = eventConfig.activityName;
             document.getElementById('welcome-title-text').innerText = eventConfig.activityName;
-            document.getElementById('banner-blur').style.backgroundImage = "url('" + eventConfig.bannerUrl + "')";
             document.getElementById('banner-img').src = eventConfig.bannerUrl;
         }
 
@@ -288,7 +284,6 @@
       document.getElementById('overlay').style.display = 'flex';
     }
 
-    // === 相簿生成邏輯 (🌟 獨家動態預載系統) ===
     function initGallery(data) {
       if (!data || data.length === 0) return;
 
@@ -299,7 +294,6 @@
       var navContainer = document.getElementById('month-nav');
       var currentMonth = null;
 
-      // 1. 建立所有框架，但故意不放入真實圖片連結 (使用 data-src 代替)
       data.forEach(function(img, index) {
         if (img.monthLabel !== currentMonth) {
           if (!(img.monthLabel in monthStartIndex)) {
@@ -330,13 +324,11 @@
         wrapper.appendChild(slide);
       });
 
-      // 🌟 2. 智慧預載函數：只負責把滑動到「附近」的照片喚醒！
       function lazyLoadNearby() {
         if (!mySwiper || !mySwiper.slides) return;
         var activeIdx = mySwiper.activeIndex;
         var slides = mySwiper.slides;
         
-        // 只喚醒當前畫面的前 2 張，和後 3 張
         var start = Math.max(0, activeIdx - 2);
         var end = Math.min(slides.length - 1, activeIdx + 3);
         
@@ -347,12 +339,9 @@
           var img = s.querySelector('.main-photo');
           var bg = s.querySelector('.slide-bg-blur');
           
-          // 如果照片還沒被喚醒，就分配真實網址給它
           if (img && img.getAttribute('data-src')) {
             img.src = img.getAttribute('data-src');
             img.removeAttribute('data-src');
-            
-            // 等圖片下載完畢，通知 Swiper 重新調整這張照片的完美寬度
             img.onload = function() {
               if (mySwiper) mySwiper.update(); 
             };
@@ -365,55 +354,57 @@
         }
       }
 
-      // 3. 啟動 Swiper 引擎
       try {
           mySwiper = new Swiper(".mySwiper", {
             initialSlide: 0, effect: "coverflow", grabCursor: true, centeredSlides: true, slidesPerView: "auto", 
             coverflowEffect: { rotate: 15, stretch: -15, depth: 400, modifier: 1, slideShadows: true },
             pagination: { el: ".swiper-pagination", type: "fraction" },
             navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
-            
-            // 👇 這是加回來的自動播放設定！
-            autoplay: {
-              delay: 3000,                 // 停留在每張照片的時間 (3000 = 3秒，可自行修改)
-              disableOnInteraction: false, // 設為 false 代表使用者手動滑動後，它還是會繼續自動播放
-            },
-            // 👆 加回來的自動播放設定結束
-            
+            autoplay: { delay: 3000, disableOnInteraction: false },
             on: { 
-              init: function () {
-                setTimeout(lazyLoadNearby, 50); // 一開始先喚醒前幾張
-              },
-              slideChange: function () {
-                updateActiveMonthBtn();
-                lazyLoadNearby(); // 每次滑動就沿路喚醒後面的照片
-              }
+              init: function () { setTimeout(lazyLoadNearby, 50); },
+              slideChange: function () { updateActiveMonthBtn(); lazyLoadNearby(); }
             }
           });
           updateActiveMonthBtn(); 
       } catch (swiperError) {
           console.error("3D 引擎初始化失敗:", swiperError);
       }
+    } 
 
-    document.getElementById('enter-btn').onclick = function() {
-      if (typeof localPlaylist !== 'undefined' && localPlaylist.length > 0) {
-        myAudio.load(); 
-        myAudio.play().then(() => {
-          updatePlayBtnState(true);
-        }).catch(e => {
-          console.log("iOS 音樂自動播放受阻:", e);
-        });
-      }
-
+    // 🌟 iPad 防卡死設計：使用 addEventListener，並且先處理畫面，後處理音樂
+    document.getElementById('enter-btn').addEventListener('click', function(e) {
+      
+      // 第一步：絕對優先把載入畫面關掉，不讓後面的錯誤有機會卡住畫面
       var ws = document.getElementById('welcome-screen');
       ws.style.opacity = '0';
       setTimeout(() => ws.style.display = 'none', 600);
 
+      // 第二步：啟動幻燈片
       if (mySwiper) {
         mySwiper.update(); 
         mySwiper.slideTo(0); 
+        if(mySwiper.autoplay) mySwiper.autoplay.start();
       }
-    };
+
+      // 第三步：用 try...catch 包裝音樂播放，就算 Safari 報錯也不會影響畫面
+      try {
+        if (typeof localPlaylist !== 'undefined' && localPlaylist.length > 0) {
+          myAudio.load(); 
+          var playPromise = myAudio.play();
+          
+          if (playPromise !== undefined) {
+            playPromise.then(() => {
+              updatePlayBtnState(true);
+            }).catch(error => {
+              console.warn("iPad/iOS 防止自動播放，請使用者手動點擊播放器:", error);
+            });
+          }
+        }
+      } catch (audioError) {
+        console.error("音樂系統啟動失敗，但不影響展廳運作:", audioError);
+      }
+    });
 
     function updateActiveMonthBtn() {
       if (!mySwiper || typeof localImages === 'undefined' || localImages.length === 0) return;
@@ -430,7 +421,6 @@
         activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
       }
     }
-}
 
     document.getElementById('overlay').onclick = function() {
       this.style.display = 'none';
