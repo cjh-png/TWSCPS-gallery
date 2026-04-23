@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>線上影展 - 極簡測試版</title>
+  <title>線上影展 - 極簡測試版 (修復記憶體崩潰)</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
   
@@ -54,14 +54,19 @@
     .swiper-slide { 
       display: flex; align-items: center; justify-content: center;
     }
+    
+    /* 預設圖片透明，載入後才顯示，避免閃爍 */
     .swiper-slide img { 
       max-width: 100%; max-height: 100%; object-fit: contain; 
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .swiper-slide img.loaded {
+      opacity: 1;
     }
     
     .swiper-pagination-fraction { color: #fff; font-weight: bold; }
     .swiper-button-next, .swiper-button-prev { color: white; }
 
-    /* 📱 手機與平板適應 */
     @media (max-width: 820px) {
         .banner-container { height: 180px; }
         .month-nav-container { justify-content: flex-start; }
@@ -94,27 +99,22 @@
     var mySwiper = null;
     var monthStartIndex = {}; 
     
-    // 判斷是否為本地開啟，決定載入高畫質或縮圖
     var isLocal = window.location.protocol === 'file:' || 
                   window.location.hostname === 'localhost' || 
                   window.location.hostname === '127.0.0.1';
 
-    // 網頁載入後立即執行
     document.addEventListener("DOMContentLoaded", function() {
-      // 讀取標題與 Banner
       if(typeof eventConfig !== 'undefined') {
           document.title = eventConfig.activityName;
           document.getElementById('activity-title').innerText = eventConfig.activityName;
           document.getElementById('banner-img').src = eventConfig.bannerUrl;
       }
       
-      // 讀取相片
       if(typeof localImages !== 'undefined') {
           initGallery(localImages);
       }
     });
 
-    // 建立相簿功能
     function initGallery(data) {
       if (!data || data.length === 0) return;
 
@@ -125,9 +125,7 @@
       var navContainer = document.getElementById('month-nav');
       var currentMonth = null;
 
-      // 迴圈生成圖片與按鈕
       data.forEach(function(img, index) {
-        // 生成月份按鈕
         if (img.monthLabel !== currentMonth) {
           if (!(img.monthLabel in monthStartIndex)) {
             monthStartIndex[img.monthLabel] = index;
@@ -143,23 +141,55 @@
           currentMonth = img.monthLabel;
         }
 
-        // 生成圖片 Slide (拔除所有特效，單純放入圖片)
         var imgUrl = isLocal ? img.highUrl : img.thumbUrl;
         var slide = document.createElement('div');
         slide.className = 'swiper-slide';
-        slide.innerHTML = '<img src="' + imgUrl + '" alt="' + img.folderName + '">';
+        
+        // 【關鍵修改】：把 src 改成 data-src，一開始不要載入圖片
+        slide.innerHTML = '<img data-src="' + imgUrl + '" alt="' + img.folderName + '">';
         wrapper.appendChild(slide);
       });
 
-      // 初始化 Swiper (最簡化的 2D 滑動設定)
+      // 【關鍵修改】：這個函數負責「只載入目前這張，和前後各兩張圖片」
+      function loadNearbyImages() {
+        if (!mySwiper || !mySwiper.slides) return;
+        var activeIdx = mySwiper.activeIndex;
+        var slides = mySwiper.slides;
+        
+        // 計算需要載入的範圍 (前後各2張)
+        var start = Math.max(0, activeIdx - 2);
+        var end = Math.min(slides.length - 1, activeIdx + 2);
+        
+        for (var i = start; i <= end; i++) {
+          var s = slides[i];
+          if (!s) continue;
+          
+          var img = s.querySelector('img');
+          // 如果圖片還沒載入，就把 data-src 塞給 src 讓他開始下載
+          if (img && img.getAttribute('data-src')) {
+            img.src = img.getAttribute('data-src');
+            img.removeAttribute('data-src');
+            img.onload = function() {
+              this.classList.add('loaded'); // 載入完畢後顯示
+            }
+          }
+        }
+      }
+
       mySwiper = new Swiper(".mySwiper", {
         slidesPerView: 1, 
         spaceBetween: 20, 
         navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
         pagination: { el: ".swiper-pagination", type: "fraction" },
         on: { 
+          init: function () {
+            // 初始化時載入前幾張圖片
+            setTimeout(loadNearbyImages, 50); 
+          },
           slideChange: function () { 
             updateActiveMonthBtn(); 
+            // 滑動時載入接下來的圖片
+            loadNearbyImages();
           }
         }
       });
@@ -167,7 +197,6 @@
       updateActiveMonthBtn(); 
     } 
 
-    // 更新目前亮起的月份按鈕
     function updateActiveMonthBtn() {
       if (!mySwiper || typeof localImages === 'undefined' || localImages.length === 0) return;
       var currentIndex = mySwiper.activeIndex;
@@ -180,7 +209,6 @@
       var activeBtn = document.getElementById('btn-month-' + currentLabel);
       if (activeBtn) {
         activeBtn.classList.add('active');
-        // 讓選中的按鈕自動滾動到畫面可見範圍
         activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
       }
     }
