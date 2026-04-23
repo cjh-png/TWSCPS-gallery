@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>線上影展 - 極簡測試版 (自動播放)</title>
+  <title>線上影展 - 極簡測試版 (自動播放 + 資料夾標籤)</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
   
@@ -53,6 +53,16 @@
     }
     .swiper-slide { 
       display: flex; align-items: center; justify-content: center;
+      position: relative; /* 確保左上角的標籤能準確定位 */
+    }
+    
+    /* === 5. 左上角資料夾標籤 === */
+    .folder-badge {
+      position: absolute; top: 15px; left: 15px; 
+      background: rgba(0, 0, 0, 0.6); color: white;
+      padding: 6px 16px; border-radius: 20px; 
+      font-weight: bold; font-size: 13px; z-index: 10; 
+      border-left: 3px solid var(--primary-color);
     }
     
     /* 預設圖片透明，載入後才顯示，避免閃爍 */
@@ -136,7 +146,7 @@
             btn.onclick = function() { 
                 if(mySwiper) {
                   mySwiper.slideTo(index);
-                  if(mySwiper.autoplay) mySwiper.autoplay.start(); // 點擊月份後確保繼續播放
+                  if(mySwiper.autoplay) mySwiper.autoplay.start(); 
                 }
             };
             navContainer.appendChild(btn);
@@ -148,8 +158,11 @@
         var slide = document.createElement('div');
         slide.className = 'swiper-slide';
         
-        // 保持延遲載入機制
-        slide.innerHTML = '<img data-src="' + imgUrl + '" alt="' + img.folderName + '">';
+        // 延遲載入機制 + 左上角標籤
+        slide.innerHTML = `
+          <div class="folder-badge">${img.folderName}</div>
+          <img data-src="${imgUrl}" alt="${img.folderName}">
+        `;
         wrapper.appendChild(slide);
       });
 
@@ -176,17 +189,15 @@
         }
       }
 
-      // 初始化 Swiper 並加入自動播放
       mySwiper = new Swiper(".mySwiper", {
         slidesPerView: 1, 
         spaceBetween: 20, 
         navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
         pagination: { el: ".swiper-pagination", type: "fraction" },
         
-        // 【新增】：2秒自動播放設定
         autoplay: {
-          delay: 2000, // 2000 毫秒 = 2 秒
-          disableOnInteraction: false, // 使用者操作後不停止自動播放
+          delay: 2000, 
+          disableOnInteraction: false, 
         },
         
         on: { 
