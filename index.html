@@ -200,7 +200,7 @@
 
   <div class="banner-container">
     <div class="banner-bg-blur" id="banner-blur"></div>
-    <img src="" id="banner-img" class="banner-new-photo" alt="活動影展 Banner" onerror="this.style.display='none'">
+    <img id="banner-img" class="banner-new-photo" alt="活動影展 Banner">
   </div>
 
   <div class="main-content">
@@ -258,7 +258,11 @@
             document.getElementById('activity-title').innerText = eventConfig.activityName;
             document.getElementById('welcome-title-text').innerText = eventConfig.activityName;
             document.getElementById('banner-blur').style.backgroundImage = "url('" + eventConfig.bannerUrl + "')";
-            document.getElementById('banner-img').src = eventConfig.bannerUrl;
+            
+            // 🌟 修復點 2：設定圖片網址後，強制將 display 設為 block
+            var bannerImg = document.getElementById('banner-img');
+            bannerImg.src = eventConfig.bannerUrl;
+            bannerImg.style.display = 'block';
         }
 
         if(typeof localImages !== 'undefined') initGallery(localImages);
