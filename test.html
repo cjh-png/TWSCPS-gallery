@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>線上影展 - 虛擬列表終極測試版</title>
+  <title>線上影展 - 優化版</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
   
@@ -47,7 +47,9 @@
       background: var(--primary-color); color: white; 
     }
 
-    /* === 4. 最基礎的圖片輪播 === */
+    /* === 4. Swiper 容器 === */
+    .swiper-outer { position: relative; padding-bottom: 40px; } /* 為下方序號留空間 */
+
     .swiper { 
       width: 100%; height: 60vh; min-height: 300px; background: #000; border-radius: 10px;
     }
@@ -56,44 +58,71 @@
       position: relative; 
     }
     
-    /* === 5. 左上角資料夾標籤 === */
+    /* === 5. 左上角資料夾標籤 (加大字體) === */
     .folder-badge {
-      position: absolute; top: 15px; left: 15px; 
-      background: rgba(0, 0, 0, 0.6); color: white;
-      padding: 6px 16px; border-radius: 20px; 
-      font-weight: bold; font-size: 13px; z-index: 10; 
-      border-left: 3px solid var(--primary-color);
+      position: absolute; top: 20px; left: 20px; 
+      background: rgba(0, 0, 0, 0.7); color: white;
+      padding: 8px 20px; border-radius: 25px; 
+      font-weight: bold; 
+      font-size: 20px; /* 從 13px 大幅增加到 20px */
+      z-index: 10; 
+      border-left: 5px solid var(--primary-color);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
     
     .swiper-slide img { 
       max-width: 100%; max-height: 100%; object-fit: contain; 
     }
+
+    /* === 6. 序號與總數文字 (放在圖片下方) === */
+    .swiper-pagination-fraction { 
+      position: absolute; bottom: -35px !important; /* 移出 Swiper 框框 */
+      color: #aaa; font-weight: bold; font-size: 16px; 
+    }
     
-    .swiper-pagination-fraction { color: #fff; font-weight: bold; }
     .swiper-button-next, .swiper-button-prev { color: white; }
+
+    /* === 7. 背景音樂按鈕 === */
+    .music-control {
+      position: fixed; bottom: 20px; right: 20px; z-index: 100;
+      background: rgba(0, 86, 179, 0.8); color: white;
+      width: 50px; height: 50px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 20px; border: 2px solid #fff;
+      box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    }
+    .music-control.playing { animation: rotate 3s linear infinite; }
+    @keyframes rotate { from {transform: rotate(0deg);} to {transform: rotate(360deg);} }
 
     @media (max-width: 820px) {
         .banner-container { height: 180px; }
         .month-nav-container { justify-content: flex-start; }
+        .folder-badge { font-size: 16px; top: 15px; left: 15px; }
     }
   </style>
 </head>
 <body>
+
+  <audio id="bg-music" loop preload="auto">
+    <source src="./music.mp3" type="audio/mpeg">
+  </audio>
+  
+  <div class="music-control" id="music-btn" onclick="toggleMusic()">🎵</div>
 
   <div class="banner-container">
     <img src="" id="banner-img" onerror="this.style.display='none'">
   </div>
 
   <div class="main-content">
-    <h2 id="activity-title" style="text-align:center;"></h2>
-    
     <div class="month-nav-container" id="month-nav" style="display: none;"></div>
     
-    <div class="swiper mySwiper" style="display: none;" id="swiper-area">
-      <div class="swiper-wrapper"></div>
-      <div class="swiper-pagination"></div>
-      <div class="swiper-button-next"></div>
-      <div class="swiper-button-prev"></div>
+    <div class="swiper-outer">
+        <div class="swiper mySwiper" style="display: none;" id="swiper-area">
+          <div class="swiper-wrapper"></div>
+          <div class="swiper-pagination"></div>
+          <div class="swiper-button-next"></div>
+          <div class="swiper-button-prev"></div>
+        </div>
     </div>
   </div>
 
@@ -103,6 +132,8 @@
   <script>
     var mySwiper = null;
     var monthStartIndex = {}; 
+    var audio = document.getElementById('bg-music');
+    var musicBtn = document.getElementById('music-btn');
     
     var isLocal = window.location.protocol === 'file:' || 
                   window.location.hostname === 'localhost' || 
@@ -111,14 +142,32 @@
     document.addEventListener("DOMContentLoaded", function() {
       if(typeof eventConfig !== 'undefined') {
           document.title = eventConfig.activityName;
-          document.getElementById('activity-title').innerText = eventConfig.activityName;
           document.getElementById('banner-img').src = eventConfig.bannerUrl;
       }
       
       if(typeof localImages !== 'undefined') {
           initGallery(localImages);
       }
+      
+      // 嘗試點擊任何地方後播放音樂 (因應瀏覽器政策)
+      document.body.addEventListener('click', function() {
+          if (audio.paused && !audio.ended) {
+              // audio.play(); // 如果想強制一進來就播可以開啟，但建議讓使用者點音樂鈕
+          }
+      }, { once: true });
     });
+
+    function toggleMusic() {
+      if (audio.paused) {
+        audio.play();
+        musicBtn.classList.add('playing');
+        musicBtn.innerText = '📻';
+      } else {
+        audio.pause();
+        musicBtn.classList.remove('playing');
+        musicBtn.innerText = '🎵';
+      }
+    }
 
     function initGallery(data) {
       if (!data || data.length === 0) return;
@@ -129,7 +178,6 @@
       var navContainer = document.getElementById('month-nav');
       var currentMonth = null;
 
-      // 1. 建立月份按鈕 (不再一次性建立圖片 DOM)
       for (var i = 0; i < data.length; i++) {
         var imgData = data[i];
         if (imgData.monthLabel !== currentMonth) {
@@ -140,11 +188,10 @@
             btn.innerText = imgData.monthLabel;
             btn.id = 'btn-month-' + imgData.monthLabel;
             
-            // 使用 ES5 閉包確保點擊時抓到正確的索引值
             (function(index) {
               btn.onclick = function() { 
                   if(mySwiper) {
-                    mySwiper.slideTo(index, 0); // 跳轉到該月份
+                    mySwiper.slideTo(index, 0);
                     if(mySwiper.autoplay && mySwiper.autoplay.running) {
                         mySwiper.autoplay.start(); 
                     }
@@ -158,24 +205,22 @@
         }
       }
 
-      // 2. 初始化 Swiper 虛擬模式 (Virtual)
       mySwiper = new Swiper(".mySwiper", {
         slidesPerView: 1, 
         spaceBetween: 20, 
         navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
-        pagination: { el: ".swiper-pagination", type: "fraction" },
-        autoplay: { delay: 2000, disableOnInteraction: false },
+        pagination: { 
+            el: ".swiper-pagination", 
+            type: "fraction" // 啟用 1 / 50 格式
+        },
+        autoplay: { delay: 3000, disableOnInteraction: false },
         
-        // 🌟 核心記憶體優化：開啟虛擬幻燈片
         virtual: {
           slides: data,
           renderSlide: function (slideData, index) {
             var imgUrl = isLocal ? slideData.highUrl : slideData.thumbUrl;
-            
-            // 安全過濾：如果有雙引號，把它轉換掉，避免破壞 HTML
             var safeFolderName = slideData.folderName ? slideData.folderName.replace(/"/g, '&quot;') : '';
 
-            // 動態生成 HTML (Swiper 會自動控制只渲染附近的幾張，自動刪除滑過的標籤)
             return '<div class="swiper-slide">' +
                      '<div class="folder-badge">' + safeFolderName + '</div>' +
                      '<img src="' + imgUrl + '" alt="' + safeFolderName + '">' +
