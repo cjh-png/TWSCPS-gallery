@@ -1,5 +1,5 @@
 // 此檔案由 build.js 自動生成，請勿手動修改
-// 生成時間: 2026/4/23 上午8:20:36
+// 生成時間: 2026/4/23 上午10:28:36
 const eventConfig = { 
     activityName: "慈天相片影展", 
     bannerUrl: "./images/banner.jpg" 
