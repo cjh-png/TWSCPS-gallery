@@ -1,65 +1,72 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>專業修復版 - 3D 影展</title>
+  <title>TWSCPS-2526線上影展 - Ipad 3D版</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
+  
   <style>
-    :root { --primary: #007AFF; --bg: #000; }
-    body { margin: 0; background: var(--bg); color: #fff; font-family: sans-serif; overflow-x: hidden; }
-
-    /* 3D Banner 效果 */
-    .banner-container { width: 100%; height: 220px; overflow: hidden; position: relative; }
-    .banner-img { width: 100%; height: 110%; object-fit: cover; filter: brightness(0.6); position: absolute; top: -5%; }
-    .banner-title { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1.8rem; font-weight: bold; text-shadow: 0 4px 10px rgba(0,0,0,0.5); width: 90%; text-align: center; }
-
-    /* 月份導覽 */
-    .month-nav { display: flex; gap: 10px; overflow-x: auto; padding: 15px; position: sticky; top: 0; z-index: 100; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); }
-    .month-nav::-webkit-scrollbar { display: none; }
-    .month-btn { padding: 8px 18px; border-radius: 20px; border: 1px solid #444; background: #222; color: #ccc; white-space: nowrap; font-size: 14px; cursor: pointer; }
-    .month-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-
-    /* Swiper 3D 容器 */
-    .swiper { width: 100%; padding-top: 20px; padding-bottom: 50px; }
-    .swiper-slide { 
-      width: 80% !important; /* 手機端自動等比例 */
-      max-width: 600px;
-      height: 60vh;
-      display: flex; align-items: center; justify-content: center;
-      background: #111; border-radius: 15px; overflow: hidden;
+    :root { --primary-color: #0056b3; --bg-color: #1a1a1d; }
+    body { 
+      margin: 0; padding: 0; font-family: 'Noto Sans TC', sans-serif; 
+      background-color: var(--bg-color); color: #fff; overflow-x: hidden; 
+      padding-bottom: 40vh; 
     }
+
+    /* === Banner === */
+    .banner-container { width: 100%; height: 260px; background-color: #000; overflow: hidden; }
+    .banner-container img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* === 月份導覽 === */
+    #month-nav { 
+      display: flex; gap: 10px; overflow-x: auto; padding: 15px 10px; 
+      background-color: rgba(0,0,0,0.5); position: sticky; top: 0; z-index: 100;
+      scrollbar-width: none; -ms-overflow-style: none;
+    }
+    #month-nav::-webkit-scrollbar { display: none; }
+    .month-btn { 
+      padding: 8px 16px; border-radius: 20px; border: 1px solid #444;
+      background-color: #2a2a2d; color: #ccc; white-space: nowrap; cursor: pointer; font-size: 14px;
+    }
+    .month-btn.active { background-color: var(--primary-color); color: #fff; border-color: var(--primary-color); }
+
+    /* === Swiper 容器與 3D 修正 === */
+    .swiper { width: 100%; padding-top: 50px; padding-bottom: 50px; }
+    
+    /* 🟢 修改點：寬度不能是 100%，否則看不到旁邊的 3D 圖片 */
+    .swiper-slide { 
+      width: 80% !important; 
+      max-width: 600px;
+      height: 60vh; 
+      display: flex; align-items: center; justify-content: center; 
+      background-color: #000; border-radius: 12px; overflow: hidden;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    }
+    
     .swiper-slide img { width: 100%; height: 100%; object-fit: contain; }
 
-    /* 響應式文字 (Folder Badge) */
     .folder-badge {
-      position: absolute; top: 10px; left: 10px;
-      background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
-      padding: 4px 10px; border-radius: 5px;
-      /* 重要：使用 clamp 確保字體在手機上變小，在 iPad 上適中 */
-      font-size: clamp(10px, 3vw, 14px); 
-      border-left: 3px solid var(--primary);
-      max-width: 90%;
+      position: absolute; top: 10px; left: 10px; z-index: 10;
+      background-color: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 4px; font-size: 12px;
     }
 
-    @media (max-width: 600px) {
-      .banner-container { height: 160px; }
-      .swiper-slide { height: 50vh; }
-    }
+    /* 控制列 */
+    #custom-pagination { text-align: center; margin: 10px 0; font-weight: bold; }
   </style>
 </head>
 <body>
 
   <div class="banner-container">
-    <img id="banner-img" class="banner-img" src="">
-    <div id="activity-name" class="banner-title">載入中...</div>
+    <img id="banner-img" src="">
   </div>
 
-  <div id="nav" class="month-nav"></div>
+  <div id="month-nav"></div>
 
   <div class="swiper mySwiper">
     <div class="swiper-wrapper"></div>
-    <div class="swiper-pagination"></div>
+    <div id="custom-pagination"></div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
@@ -69,14 +76,19 @@
     var mySwiper;
 
     document.addEventListener('DOMContentLoaded', function() {
-      // 1. 初始化基礎資訊
-      document.getElementById('activity-name').innerText = eventConfig.activityName;
-      document.getElementById('banner-img').src = eventConfig.bannerUrl;
+      if (typeof eventConfig !== 'undefined') {
+        document.getElementById('banner-img').src = eventConfig.bannerUrl;
+      }
+      if (typeof localImages !== 'undefined' && localImages.length > 0) {
+        initGallery(localImages);
+      }
+    });
 
-      // 2. 生成月份導覽
-      var nav = document.getElementById('nav');
+    function initGallery(data) {
+      // 1. 生成月份按鈕
+      var nav = document.getElementById('month-nav');
       var months = [];
-      localImages.forEach(function(img) {
+      data.forEach(function(img) {
         if (months.indexOf(img.monthLabel) === -1) months.push(img.monthLabel);
       });
 
@@ -86,53 +98,59 @@
         btn.id = 'btn-month-' + m;
         btn.innerText = m;
         btn.onclick = function() {
-          var targetIndex = localImages.findIndex(img => img.monthLabel === m);
+          var targetIndex = data.findIndex(function(img) { return img.monthLabel === m; });
           mySwiper.slideTo(targetIndex);
         };
         nav.appendChild(btn);
       });
 
-      // 3. 初始化 Swiper (回退到更穩定的渲染邏輯)
+      // 2. 初始化 Swiper
       mySwiper = new Swiper(".mySwiper", {
-        effect: "coverflow", // 🟢 3D 效果
+        // 🟢 注入 3D Coverflow 效果
+        effect: "coverflow",
         grabCursor: true,
         centeredSlides: true,
-        slidesPerView: "auto",
+        slidesPerView: "auto", // 配合 CSS 的 80% 寬度
         coverflowEffect: {
-          rotate: 15,
-          stretch: 0,
-          depth: 100,
-          modifier: 2,
-          slideShadows: true,
+          rotate: 15,     // 旋轉角度
+          stretch: 0,     // 拉伸距離
+          depth: 100,     // 深度偏移
+          modifier: 2,    // 效果倍率
+          slideShadows: true, // 開啟陰影
         },
+        loop: true,
+        pagination: { el: "#custom-pagination", type: "fraction" },
+        autoplay: { delay: 3000, disableOnInteraction: false },
         virtual: {
-          slides: localImages,
-          renderSlide: function (slide, index) {
-            // 🟢 使用 iOS.html 成功的路徑判斷邏輯，不加額外的 safeUrl
-            var imgUrl = (window.location.protocol === 'file:') ? slide.highUrl : slide.thumbUrl;
+          slides: data,
+          renderSlide: function (slideData) {
+            // 🟡 保留原本成功的圖片路徑邏輯
+            var imgUrl = (window.location.protocol === 'file:') ? slideData.highUrl : slideData.thumbUrl;
             return '<div class="swiper-slide">' +
-                     '<div class="folder-badge">' + slide.folderName + '</div>' +
+                     '<div class="folder-badge">' + slideData.folderName + '</div>' +
                      '<img src="' + imgUrl + '">' +
                    '</div>';
           }
         },
-        pagination: { el: ".swiper-pagination", type: "fraction" },
         on: {
           slideChange: function() {
-            updateMonthNav(this.realIndex);
+            updateActiveMonthBtn(data);
           }
         }
       });
-    });
+    }
 
-    function updateMonthNav(index) {
-      var currentMonth = localImages[index].monthLabel;
-      document.querySelectorAll('.month-btn').forEach(function(btn) {
-        btn.classList.toggle('active', btn.innerText === currentMonth);
-        if (btn.innerText === currentMonth) {
-          btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-        }
-      });
+    function updateActiveMonthBtn(data) {
+      if (!mySwiper) return;
+      var currentIndex = mySwiper.realIndex;
+      var currentLabel = data[currentIndex].monthLabel;
+      var btns = document.querySelectorAll('.month-btn');
+      btns.forEach(function(b) { b.classList.remove('active'); });
+      var activeBtn = document.getElementById('btn-month-' + currentLabel);
+      if (activeBtn) {
+        activeBtn.classList.add('active');
+        activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
     }
   </script>
 </body>
