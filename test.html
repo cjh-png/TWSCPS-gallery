@@ -1,295 +1,200 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>線上影展 - 3D 虛擬展廳</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  
+  <title>實驗室 - 3D 智慧影展</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
   
   <style>
-    :root { --primary-color: #0056b3; --bg-color: #1a1a1d; }
-    body { margin: 0; padding: 0; font-family: 'Noto Sans TC', sans-serif; background-color: var(--bg-color); color: #fff; overflow-x: hidden; -webkit-user-select: none; user-select: none; }
+    :root { --primary: #007AFF; --bg: #000; }
+    body { margin: 0; background: var(--bg); color: #fff; font-family: 'Noto Sans TC', sans-serif; overflow: hidden; }
 
-    /* === Banner === */
-    .banner-container { position: relative; width: 100%; height: 260px; background-color: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; }
-    .banner-bg-blur { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; filter: blur(25px) brightness(0.6); transform: scale(1.1); z-index: 1; }
-    .banner-new-photo { display: block; max-width: 100%; height: 100%; object-fit: contain; position: relative; z-index: 2; }
+    /* 頂部橫幅：優化視覺深度 */
+    .banner { position: relative; width: 100%; height: 220px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .banner-blur { position: absolute; width: 110%; height: 110%; background-size: cover; background-position: center; filter: blur(20px) brightness(0.5); z-index: 1; }
+    .banner-img { position: relative; z-index: 2; height: 80%; object-fit: contain; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 8px; }
 
-    /* === Main Container === */
-    .main-content { max-width: 1600px; margin: -20px auto 40px auto; padding: 10px; position: relative; z-index: 10; }
-
-    /* === 月份導覽 === */
-    .month-nav-container {
-      background: rgba(40,40,45,0.8); padding: 10px 15px; border-radius: 50px;
-      display: flex; gap: 8px; overflow-x: auto; white-space: nowrap; justify-content: center; backdrop-filter: blur(10px);
-      margin-bottom: 15px;
+    /* 月份導覽：毛玻璃效果 */
+    .nav-bar { 
+      display: flex; gap: 10px; overflow-x: auto; padding: 15px; 
+      background: rgba(255,255,255,0.05); backdrop-filter: blur(15px);
+      -webkit-overflow-scrolling: touch; scrollbar-width: none;
     }
-    .month-nav-container::-webkit-scrollbar { display: none; }
-    .month-btn { background: rgba(60,60,65,0.5); border: none; padding: 8px 18px; border-radius: 30px; font-size: 14px; font-weight: bold; color: #ccc; cursor: pointer; transition: 0.3s; }
-    .month-btn.active { background: var(--primary-color); color: white; }
+    .nav-bar::-webkit-scrollbar { display: none; }
+    .nav-btn { 
+      padding: 8px 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2);
+      background: transparent; color: #aaa; white-space: nowrap; cursor: pointer; transition: 0.3s;
+    }
+    .nav-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 
-    /* === 3D Swiper (虛擬列表) === */
-    .swiper { width: 100%; padding-top: 20px; padding-bottom: 70px; }
+    /* Swiper 主體 */
+    .swiper { width: 100%; height: calc(100vh - 350px); padding: 30px 0 60px; }
     .swiper-slide { 
-      width: 550px; height: 70vh; max-height: 800px; min-height: 400px; 
-      background-color: #050505; border-radius: 15px; overflow: hidden; position: relative; 
+      width: 600px; max-width: 85%; height: 100%; 
+      background: #111; border-radius: 20px; overflow: hidden;
       display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+      transition: transform 0.3s;
     }
-    
-    .slide-bg-blur { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; filter: blur(25px) brightness(0.6); transform: scale(1.1); z-index: 1; transition: background-image 0.3s;}
-    .main-photo { display: block; max-width: 100%; height: 100%; object-fit: contain; position: relative; z-index: 2; cursor: pointer; transition: opacity 0.3s;}
-    
-    .folder-badge { position: absolute; top: 20px; left: 20px; background: rgba(0, 0, 0, 0.7); color: white; padding: 7px 18px; border-radius: 30px; font-weight: bold; font-size: 14px; z-index: 10; border-left: 4px solid var(--primary-color); backdrop-filter: blur(5px);}
-    .photo-name { position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); color: #fff; font-size: 13px; padding: 40px 15px 15px; text-align: center; z-index: 4; letter-spacing: 1px;}
 
-    /* 分頁與按鈕 */
-    .swiper-pagination-fraction { color: #fff !important; font-weight: bold; font-size: 16px; bottom: 15px !important;}
-    .swiper-button-next, .swiper-button-prev { color: white !important; background: rgba(255,255,255,0.1); width: 45px !important; height: 45px !important; border-radius: 50%; padding: 10px; backdrop-filter: blur(5px);}
+    /* 借鑒：Swiper Zoom 容器結構 */
+    .swiper-zoom-container { width: 100%; height: 100%; }
+    .swiper-slide img { width: 100%; height: 100%; object-fit: contain; }
 
-    /* 工具組件 */
-    .music-player, .fullscreen-btn { position: fixed; bottom: 20px; z-index: 1000; background: rgba(30,30,35,0.8); backdrop-filter: blur(10px); border-radius: 50px; border: 1px solid rgba(255,255,255,0.1); }
-    .music-player { right: 20px; display: flex; align-items: center; padding: 8px 15px 8px 8px; gap: 10px; box-shadow: 0 8px 25px rgba(0,0,0,0.6);}
-    .fullscreen-btn { left: 20px; width: 42px; height: 42px; color: white; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 8px 25px rgba(0,0,0,0.6);}
-    .play-btn { background: var(--primary-color); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 14px; }
-    .track-info { font-size: 12px; color: #ddd; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;}
-    
-    #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: none; justify-content: center; align-items: center; z-index: 10000; cursor: zoom-out; }
-    #overlay img { max-width: 95%; max-height: 95%; object-fit: contain; }
-
-    @media (max-width: 600px) {
-      .swiper-slide { width: 85%; height: 60vh; }
-      .banner-container { height: 180px; }
-      .month-btn { font-size: 13px; padding: 6px 14px; }
+    /* 懸浮控制台 */
+    .controls { 
+      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 15px; z-index: 100;
+      background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 40px; border: 1px solid rgba(255,255,255,0.1);
     }
+    .ctrl-btn { background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+    .ctrl-btn.active { color: var(--primary); }
+
+    /* 文字標記 */
+    .info-badge { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); padding: 5px 12px; border-radius: 10px; font-size: 12px; }
+
+    @media (max-width: 600px) { .swiper-slide { width: 90%; } }
   </style>
 </head>
 <body>
 
-  <div class="banner-container">
-    <div class="banner-bg-blur" id="banner-blur"></div>
-    <img id="banner-img" class="banner-new-photo">
+  <div class="banner">
+    <div id="b-blur" class="banner-blur"></div>
+    <img id="b-img" class="banner-img" src="" alt="Banner">
   </div>
 
-  <div class="main-content">
-    <div class="month-nav-container" id="month-nav"></div>
-    <div class="swiper mySwiper" id="swiper-area">
-      <div class="swiper-wrapper"></div>
-      <div class="swiper-pagination"></div>
-      <div class="swiper-button-next"></div>
-      <div class="swiper-button-prev"></div>
-    </div>
+  <div id="nav" class="nav-bar"></div>
+
+  <div class="swiper mySwiper">
+    <div class="swiper-wrapper"></div>
+    <div class="swiper-pagination"></div>
   </div>
 
-  <button class="fullscreen-btn" onclick="toggleFullScreen()">📺</button>
-  <div class="music-player" id="music-player-ui">
-    <button class="play-btn" id="play-btn-icon" onclick="toggleMusic()">▶️</button>
-    <div class="track-info" id="track-name">音樂準備中...</div>
+  <div class="controls">
+    <button class="ctrl-btn" id="play-toggle" onclick="toggleAutoplay()">▶️</button>
+    <button class="ctrl-btn" id="music-btn" onclick="toggleMusic()">🎵</button>
+    <button class="ctrl-btn" onclick="toggleFS()">📺</button>
   </div>
 
-  <div id="overlay" onclick="closeOverlay()">
-    <img id="overlay-img" src="">
-  </div>
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+  <script src="./data.js"></script>
 
-  <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
-  <script src="./data.js"></script> 
-  
   <script>
-    var mySwiper = null;
-    var myAudio = new Audio();
-    var currentAudioIndex = 0;
+    let swiper;
+    const audio = new Audio();
+    let isAutoplay = false;
 
-    // 🌟 1. 安全轉碼函數：處理空格與中文，並避免引號衝突
-    function safePath(url) {
-      if (!url) return "";
-      return encodeURI(url).replace(/'/g, "%27").replace(/"/g, "%22");
+    // 安全路徑處理函數
+    function getSafePath(path) {
+      if (!path) return "";
+      return encodeURI(path).replace(/'/g, "%27");
     }
 
-    // 🌟 2. 獨立的圖片失敗救援機制 (完全不依賴 HTML 字串拼接)
-    window.handleImgError = function(imgElement, backupUrl, bgId) {
-      if (!imgElement.dataset.retry) {
-        // 第一次失敗（例如找不到縮圖），換成原圖路徑
-        imgElement.dataset.retry = "1";
-        imgElement.src = backupUrl;
-        
-        // 同步替換背景的模糊圖
-        var bgElement = document.getElementById(bgId);
-        if (bgElement) {
-          bgElement.style.backgroundImage = "url('" + backupUrl + "')";
-        }
-      } else {
-        // 如果原圖也讀不到，就徹底放棄，防止瀏覽器無限當機迴圈
-        imgElement.onerror = null; 
-      }
-    };
+    // 初始化網頁
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. 設定 Banner
+      const sBanner = getSafePath(eventConfig.bannerUrl);
+      document.getElementById('b-blur').style.backgroundImage = `url('${sBanner}')`;
+      document.getElementById('b-img').src = sBanner;
 
-    document.addEventListener("DOMContentLoaded", function() {
-      if(typeof eventConfig !== 'undefined') {
-        document.title = eventConfig.activityName;
-        var safeBanner = safePath(eventConfig.bannerUrl);
-        document.getElementById('banner-blur').style.backgroundImage = "url('" + safeBanner + "')";
-        document.getElementById('banner-img').src = safeBanner;
-      }
-
-      if(typeof localPlaylist !== 'undefined') initMusic(localPlaylist);
-      if(typeof localImages !== 'undefined') initGallery(localImages);
-    });
-
-    // === 音樂播放邏輯 ===
-    function initMusic(data) {
-      if (!data || data.length === 0) return;
-      loadAudioTrack(0);
-      
-      document.body.addEventListener('click', function() {
-        if (myAudio.paused && myAudio.src) {
-          myAudio.play().then(() => updatePlayBtnState(true)).catch(e => console.log("等待互動"));
-        }
-      }, { once: true });
-      
-      document.body.addEventListener('touchstart', function() {
-        if (myAudio.paused && myAudio.src) {
-          myAudio.play().then(() => updatePlayBtnState(true)).catch(e => {});
-        }
-      }, { once: true });
-    }
-
-    function loadAudioTrack(index) {
-      if (index >= localPlaylist.length) index = 0;
-      currentAudioIndex = index;
-      myAudio.src = localPlaylist[index].src;
-      document.getElementById('track-name').innerText = localPlaylist[index].name;
-      updatePlayBtnState(false);
-    }
-
-    myAudio.addEventListener('ended', function() {
-      loadAudioTrack(currentAudioIndex + 1);
-      myAudio.play().then(() => updatePlayBtnState(true)).catch(e => console.log(e));
-    });
-
-    function toggleMusic() {
-      if (myAudio.paused) {
-        myAudio.play().then(() => updatePlayBtnState(true)).catch(e => console.log(e));
-      } else {
-        myAudio.pause();
-        updatePlayBtnState(false);
-      }
-    }
-
-    function updatePlayBtnState(isPlaying) {
-      document.getElementById('play-btn-icon').innerText = isPlaying ? "⏸️" : "▶️";
-    }
-
-    // === 核心相簿邏輯 ===
-    function initGallery(data) {
-      if (!data || data.length === 0) return;
-
-      var navContainer = document.getElementById('month-nav');
-      var currentMonth = null;
-
-      data.forEach(function(img, index) {
-        if (img.monthLabel !== currentMonth) {
-          var btn = document.createElement('button');
-          btn.className = 'month-btn';
-          btn.innerText = img.monthLabel;
-          btn.id = 'btn-month-' + img.monthLabel;
-          btn.onclick = function() { mySwiper.slideTo(index); };
-          navContainer.appendChild(btn);
-          currentMonth = img.monthLabel;
-        }
+      // 2. 生成導覽按鈕
+      const nav = document.getElementById('nav');
+      const months = [...new Set(localImages.map(img => img.monthLabel))];
+      months.forEach(m => {
+        const btn = document.createElement('button');
+        btn.className = 'nav-btn';
+        btn.innerText = m;
+        btn.onclick = () => {
+          const targetIndex = localImages.findIndex(img => img.monthLabel === m);
+          swiper.slideTo(targetIndex);
+        };
+        nav.appendChild(btn);
       });
 
-      mySwiper = new Swiper(".mySwiper", {
-        initialSlide: 0, 
+      // 3. 初始化 Swiper (加入 Zoom 與 智慧預載)
+      swiper = new Swiper(".mySwiper", {
         effect: "coverflow",
         grabCursor: true,
         centeredSlides: true,
         slidesPerView: "auto",
-        coverflowEffect: { rotate: 15, stretch: -15, depth: 400, modifier: 1, slideShadows: true },
-        autoplay: { delay: 2500, disableOnInteraction: false },
-        
+        zoom: true, // 🟢 啟用 iPad 雙指縮放
+        loop: true,
+        coverflowEffect: { rotate: 20, stretch: 0, depth: 300, modifier: 1, slideShadows: true },
+        autoplay: false, // 預設關閉
         virtual: {
           enabled: true,
-          slides: data,
-          renderSlide: function (slideData, index) {
-            // 🌟 3. 先完美轉碼，再組合 HTML
-            var sHigh = safePath(slideData.highUrl);
-            var sThumb = safePath(slideData.thumbUrl);
-            var bgId = 'bg-' + index;
-
-            // 這裡預設先讀縮圖 (sThumb)，失敗就觸發 handleImgError 換成原圖 (sHigh)
-            return '<div class="swiper-slide">' +
-                     '<div class="folder-badge">' + slideData.folderName + '</div>' +
-                     '<div class="slide-bg-blur" id="' + bgId + '" style="background-image: url(\'' + sThumb + '\');"></div>' +
-                     '<img class="main-photo" src="' + sThumb + '" onerror="handleImgError(this, \'' + sHigh + '\', \'' + bgId + '\')" onclick="openOverlay(\'' + sHigh + '\')">' +
-                     '<div class="photo-name">' + slideData.folderName + '</div>' +
-                   '</div>';
+          slides: localImages,
+          renderSlide: (slide, index) => {
+            const sThumb = getSafePath(slide.thumbUrl);
+            const sHigh = getSafePath(slide.highUrl);
+            return `
+              <div class="swiper-slide">
+                <div class="info-badge">${slide.folderName}</div>
+                <div class="swiper-zoom-container">
+                  <img src="${sThumb}" 
+                       data-src="${sHigh}" 
+                       class="lazy-img"
+                       onerror="this.onerror=null; this.src='${sHigh}'">
+                </div>
+              </div>`;
           }
         },
-        pagination: { el: ".swiper-pagination", type: "fraction" },
-        navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
+        pagination: { el: ".swiper-pagination", type: "progressbar" }, // 🟢 借鑒：進度條顯示
         on: {
           slideChange: function() {
-            var activeIndex = this.activeIndex;
-            if(!data[activeIndex]) return;
-            var currentLabel = data[activeIndex].monthLabel;
-            var btns = document.querySelectorAll('.month-btn');
-            btns.forEach(function(b) { b.classList.remove('active'); });
-            var activeBtn = document.getElementById('btn-month-' + currentLabel);
-            if (activeBtn) {
-              activeBtn.classList.add('active');
-              activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-            }
+            updateNav(this.realIndex);
           }
         }
       });
-      
-      if (data.length > 0) {
-        var firstBtn = document.getElementById('btn-month-' + data[0].monthLabel);
-        if (firstBtn) firstBtn.classList.add('active');
+
+      // 音樂預載
+      if(localPlaylist.length > 0) {
+        audio.src = localPlaylist[0].src;
       }
+    });
 
-      // 啟動背景順序預載入
-      preloadSequentialImages(data);
+    function updateNav(index) {
+      const currentMonth = localImages[index].monthLabel;
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.innerText === currentMonth);
+        if(btn.innerText === currentMonth) btn.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+      });
     }
 
-    // 🌟 4. 背景快取同樣使用安全轉碼路徑
-    function preloadSequentialImages(data) {
-      var currentIndex = 0;
-      function loadNext() {
-        if (currentIndex >= data.length) return; 
-        var img = new Image();
-        img.onload = loadNext; 
-        img.onerror = loadNext;
-        
-        img.src = safePath(data[currentIndex].thumbUrl);
-        currentIndex++;
-      }
-      loadNext(); 
-    }
-
-    function openOverlay(url) {
-      document.getElementById('overlay-img').src = url;
-      document.getElementById('overlay').style.display = 'flex';
-      if (mySwiper && mySwiper.autoplay) mySwiper.autoplay.stop();
-    }
-
-    function closeOverlay() {
-      document.getElementById('overlay').style.display = 'none';
-      if (mySwiper && mySwiper.autoplay) mySwiper.autoplay.start();
-    }
-
-    function toggleFullScreen() {
-      var doc = window.document;
-      var docEl = doc.documentElement;
-      var requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
-      var cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
-
-      if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
-        if(requestFullScreen) requestFullScreen.call(docEl); 
+    // 🟢 功能：切換自動播放 (Slideshow Mode)
+    function toggleAutoplay() {
+      isAutoplay = !isAutoplay;
+      const btn = document.getElementById('play-toggle');
+      if (isAutoplay) {
+        swiper.autoplay.start();
+        swiper.params.autoplay.delay = 3000;
+        btn.innerText = "⏸️";
+        btn.classList.add('active');
       } else {
-        if(cancelFullScreen) cancelFullScreen.call(doc); 
+        swiper.autoplay.stop();
+        btn.innerText = "▶️";
+        btn.classList.remove('active');
       }
+    }
+
+    function toggleMusic() {
+      if (audio.paused) {
+        audio.play();
+        document.getElementById('music-btn').classList.add('active');
+      } else {
+        audio.pause();
+        document.getElementById('music-btn').classList.remove('active');
+      }
+    }
+
+    function toggleFS() {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
     }
   </script>
 </body>
