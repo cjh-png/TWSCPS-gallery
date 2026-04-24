@@ -100,13 +100,13 @@
     var myAudio = new Audio();
     var currentAudioIndex = 0;
     
-    // 判斷是否為本地開啟，決定預設讀取畫質
     var isLocal = window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
     document.addEventListener("DOMContentLoaded", function() {
       if(typeof eventConfig !== 'undefined') {
         document.title = eventConfig.activityName;
-        document.getElementById('banner-blur').style.backgroundImage = "url('" + encodeURI(eventConfig.bannerUrl) + "')";
+        // 拔除 encodeURI，直接使用原始路徑
+        document.getElementById('banner-blur').style.backgroundImage = "url('" + eventConfig.bannerUrl + "')";
         document.getElementById('banner-img').src = eventConfig.bannerUrl;
       }
 
@@ -119,7 +119,6 @@
       if (!data || data.length === 0) return;
       loadAudioTrack(0);
       
-      // 隱形觸發：使用者第一次點擊/滑動螢幕時自動播放
       document.body.addEventListener('click', function() {
         if (myAudio.paused && myAudio.src) {
           myAudio.play().then(() => updatePlayBtnState(true)).catch(e => console.log("等待互動才能播放音訊"));
@@ -178,9 +177,8 @@
         }
       });
 
-      // 初始化 3D 虛擬列表
       mySwiper = new Swiper(".mySwiper", {
-        initialSlide: 0, // 🌟 強制從第一張（最早日期）開始
+        initialSlide: 0, 
         effect: "coverflow",
         grabCursor: true,
         centeredSlides: true,
@@ -188,21 +186,20 @@
         coverflowEffect: { rotate: 15, stretch: -15, depth: 400, modifier: 1, slideShadows: true },
         autoplay: { delay: 2500, disableOnInteraction: false },
         
-        // 🌟 虛擬列表設定 (已加入絕對防呆機制)
         virtual: {
           enabled: true,
           slides: data,
           renderSlide: function (slideData, index) {
-            // 絕對安全轉碼：避免空白、中文導致圖片讀取失敗
-            var safeHighUrl = encodeURI(slideData.highUrl);
-            var safeThumbUrl = encodeURI(slideData.thumbUrl);
-            var targetUrl = isLocal ? safeHighUrl : safeThumbUrl;
+            // 🚨 修正 1：拔除所有的 encodeURI()，使用最原始字串，防止本地端讀不到
+            var highUrl = slideData.highUrl;
+            var thumbUrl = slideData.thumbUrl;
+            var targetUrl = isLocal ? highUrl : thumbUrl;
 
-            // onerror 機制：如果找不到縮圖(webp)，自動去讀取原圖(JPG)！這能解決 90% 的黑屏問題
+            // 🚨 修正 2：在 onerror 中加入「this.onerror=null;」，終結無限迴圈！
             return '<div class="swiper-slide">' +
                      '<div class="folder-badge">' + slideData.folderName + '</div>' +
                      '<div class="slide-bg-blur" style="background-image: url(\'' + targetUrl + '\');"></div>' +
-                     '<img class="main-photo" src="' + targetUrl + '" onerror="this.src=\'' + safeHighUrl + '\';" onclick="openOverlay(\'' + safeHighUrl + '\')">' +
+                     '<img class="main-photo" src="' + targetUrl + '" onerror="this.onerror=null; this.src=\'' + highUrl + '\';" onclick="openOverlay(\'' + highUrl + '\')">' +
                      '<div class="photo-name">' + slideData.folderName + '</div>' +
                    '</div>';
           }
@@ -230,28 +227,27 @@
         if (firstBtn) firstBtn.classList.add('active');
       }
 
-      // 🌟 啟動背景順序預載入 (快取)
+      // 啟動背景順序預載入
       preloadSequentialImages(data);
     }
 
-    // 🌟 背景緩存機制：從第0張開始，默默把後面的圖片下載進瀏覽器記憶體
+    // 背景緩存機制
     function preloadSequentialImages(data) {
       var currentIndex = 0;
       function loadNext() {
-        if (currentIndex >= data.length) return; // 全部載入完畢
+        if (currentIndex >= data.length) return; 
         var img = new Image();
-        // 無論成功或失敗，都接力載入下一張
         img.onload = loadNext; 
         img.onerror = loadNext;
         
         var targetUrl = isLocal ? data[currentIndex].highUrl : data[currentIndex].thumbUrl;
-        img.src = encodeURI(targetUrl);
+        // 🚨 修正 3：這裡也拔除 encodeURI
+        img.src = targetUrl;
         currentIndex++;
       }
-      loadNext(); // 啟動接力
+      loadNext(); 
     }
 
-    // === 附加功能 ===
     function openOverlay(url) {
       document.getElementById('overlay-img').src = url;
       document.getElementById('overlay').style.display = 'flex';
