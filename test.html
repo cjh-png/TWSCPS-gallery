@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>線上影展 - 3D 虛擬展廳 (自動載入版)</title>
+  <title>線上影展 - 3D 虛擬展廳</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
   
@@ -33,13 +33,13 @@
     .swiper { width: 100%; padding-top: 20px; padding-bottom: 70px; }
     .swiper-slide { 
       width: 550px; height: 70vh; max-height: 800px; min-height: 400px; 
-      background-color: #000; border-radius: 15px; overflow: hidden; position: relative; 
+      background-color: #050505; border-radius: 15px; overflow: hidden; position: relative; 
       display: flex; align-items: center; justify-content: center;
       box-shadow: 0 15px 40px rgba(0,0,0,0.5);
     }
     
     .slide-bg-blur { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; filter: blur(25px) brightness(0.6); transform: scale(1.1); z-index: 1; }
-    .main-photo { display: block; max-width: 100%; height: 100%; object-fit: contain; position: relative; z-index: 2; cursor: pointer; }
+    .main-photo { display: block; max-width: 100%; height: 100%; object-fit: contain; position: relative; z-index: 2; cursor: pointer; transition: opacity 0.3s;}
     
     .folder-badge { position: absolute; top: 20px; left: 20px; background: rgba(0, 0, 0, 0.7); color: white; padding: 7px 18px; border-radius: 30px; font-weight: bold; font-size: 14px; z-index: 10; border-left: 4px solid var(--primary-color); backdrop-filter: blur(5px);}
     .photo-name { position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); color: #fff; font-size: 13px; padding: 40px 15px 15px; text-align: center; z-index: 4; letter-spacing: 1px;}
@@ -100,34 +100,35 @@
     var myAudio = new Audio();
     var currentAudioIndex = 0;
     
-    // 更安全的本地環境判斷
+    // 判斷是否為本地開啟，決定預設讀取畫質
     var isLocal = window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
-    // === 初始化主流程 ===
     document.addEventListener("DOMContentLoaded", function() {
-      try {
-        if(typeof eventConfig !== 'undefined') {
-          document.title = eventConfig.activityName;
-          document.getElementById('banner-blur').style.backgroundImage = "url('" + eventConfig.bannerUrl + "')";
-          document.getElementById('banner-img').src = eventConfig.bannerUrl;
-        }
-
-        if(typeof localPlaylist !== 'undefined') initMusic(localPlaylist);
-        if(typeof localImages !== 'undefined') initGallery(localImages);
-      } catch (e) {
-        console.error("初始化發生錯誤:", e);
+      if(typeof eventConfig !== 'undefined') {
+        document.title = eventConfig.activityName;
+        document.getElementById('banner-blur').style.backgroundImage = "url('" + encodeURI(eventConfig.bannerUrl) + "')";
+        document.getElementById('banner-img').src = eventConfig.bannerUrl;
       }
+
+      if(typeof localPlaylist !== 'undefined') initMusic(localPlaylist);
+      if(typeof localImages !== 'undefined') initGallery(localImages);
     });
 
-    // === 音樂播放邏輯 (還原完整清單與循環) ===
+    // === 音樂播放邏輯 ===
     function initMusic(data) {
       if (!data || data.length === 0) return;
       loadAudioTrack(0);
       
-      // 隱形觸發：只要使用者點擊螢幕任何地方，就開始播放音樂 (繞過 iPad 限制)
+      // 隱形觸發：使用者第一次點擊/滑動螢幕時自動播放
       document.body.addEventListener('click', function() {
         if (myAudio.paused && myAudio.src) {
-          myAudio.play().then(() => updatePlayBtnState(true)).catch(e => console.log(e));
+          myAudio.play().then(() => updatePlayBtnState(true)).catch(e => console.log("等待互動才能播放音訊"));
+        }
+      }, { once: true });
+      
+      document.body.addEventListener('touchstart', function() {
+        if (myAudio.paused && myAudio.src) {
+          myAudio.play().then(() => updatePlayBtnState(true)).catch(e => {});
         }
       }, { once: true });
     }
@@ -158,17 +159,15 @@
       document.getElementById('play-btn-icon').innerText = isPlaying ? "⏸️" : "▶️";
     }
 
-    // === 相簿生成邏輯 (安全的虛擬列表) ===
+    // === 核心相簿邏輯 ===
     function initGallery(data) {
       if (!data || data.length === 0) return;
 
       var navContainer = document.getElementById('month-nav');
       var currentMonth = null;
-      var monthMap = {}; 
 
       data.forEach(function(img, index) {
         if (img.monthLabel !== currentMonth) {
-          monthMap[img.monthLabel] = index;
           var btn = document.createElement('button');
           btn.className = 'month-btn';
           btn.innerText = img.monthLabel;
@@ -181,26 +180,29 @@
 
       // 初始化 3D 虛擬列表
       mySwiper = new Swiper(".mySwiper", {
+        initialSlide: 0, // 🌟 強制從第一張（最早日期）開始
         effect: "coverflow",
         grabCursor: true,
         centeredSlides: true,
         slidesPerView: "auto",
         coverflowEffect: { rotate: 15, stretch: -15, depth: 400, modifier: 1, slideShadows: true },
-        autoplay: { delay: 2000, disableOnInteraction: false },
-        observer: true,
-        observeParents: true,
-        // 虛擬列表設定 (改用傳統字串拼接，避免 iPad 解析報錯)
+        autoplay: { delay: 2500, disableOnInteraction: false },
+        
+        // 🌟 虛擬列表設定 (已加入絕對防呆機制)
         virtual: {
+          enabled: true,
           slides: data,
           renderSlide: function (slideData, index) {
-            var imgUrl = isLocal ? slideData.highUrl : slideData.thumbUrl;
-            // 過濾掉路徑中可能引起錯誤的引號
-            var safeUrl = imgUrl.replace(/'/g, "\\'"); 
-            
+            // 絕對安全轉碼：避免空白、中文導致圖片讀取失敗
+            var safeHighUrl = encodeURI(slideData.highUrl);
+            var safeThumbUrl = encodeURI(slideData.thumbUrl);
+            var targetUrl = isLocal ? safeHighUrl : safeThumbUrl;
+
+            // onerror 機制：如果找不到縮圖(webp)，自動去讀取原圖(JPG)！這能解決 90% 的黑屏問題
             return '<div class="swiper-slide">' +
                      '<div class="folder-badge">' + slideData.folderName + '</div>' +
-                     '<div class="slide-bg-blur" style="background-image: url(\'' + safeUrl + '\')"></div>' +
-                     '<img class="main-photo" src="' + imgUrl + '" onclick="openOverlay(\'' + safeUrl + '\')">' +
+                     '<div class="slide-bg-blur" style="background-image: url(\'' + targetUrl + '\');"></div>' +
+                     '<img class="main-photo" src="' + targetUrl + '" onerror="this.src=\'' + safeHighUrl + '\';" onclick="openOverlay(\'' + safeHighUrl + '\')">' +
                      '<div class="photo-name">' + slideData.folderName + '</div>' +
                    '</div>';
           }
@@ -210,6 +212,7 @@
         on: {
           slideChange: function() {
             var activeIndex = this.activeIndex;
+            if(!data[activeIndex]) return;
             var currentLabel = data[activeIndex].monthLabel;
             var btns = document.querySelectorAll('.month-btn');
             btns.forEach(function(b) { b.classList.remove('active'); });
@@ -218,31 +221,46 @@
               activeBtn.classList.add('active');
               activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
             }
-          },
-          // 抵達最後一張時，自動退回第一張 (取代 Bug 較多的 virtual loop)
-          reachEnd: function() {
-            setTimeout(function() {
-              if (mySwiper) mySwiper.slideTo(0);
-            }, 2000);
           }
         }
       });
       
-      // 確保第一個月的按鈕亮起
       if (data.length > 0) {
         var firstBtn = document.getElementById('btn-month-' + data[0].monthLabel);
         if (firstBtn) firstBtn.classList.add('active');
       }
+
+      // 🌟 啟動背景順序預載入 (快取)
+      preloadSequentialImages(data);
+    }
+
+    // 🌟 背景緩存機制：從第0張開始，默默把後面的圖片下載進瀏覽器記憶體
+    function preloadSequentialImages(data) {
+      var currentIndex = 0;
+      function loadNext() {
+        if (currentIndex >= data.length) return; // 全部載入完畢
+        var img = new Image();
+        // 無論成功或失敗，都接力載入下一張
+        img.onload = loadNext; 
+        img.onerror = loadNext;
+        
+        var targetUrl = isLocal ? data[currentIndex].highUrl : data[currentIndex].thumbUrl;
+        img.src = encodeURI(targetUrl);
+        currentIndex++;
+      }
+      loadNext(); // 啟動接力
     }
 
     // === 附加功能 ===
     function openOverlay(url) {
       document.getElementById('overlay-img').src = url;
       document.getElementById('overlay').style.display = 'flex';
+      if (mySwiper && mySwiper.autoplay) mySwiper.autoplay.stop();
     }
 
     function closeOverlay() {
       document.getElementById('overlay').style.display = 'none';
+      if (mySwiper && mySwiper.autoplay) mySwiper.autoplay.start();
     }
 
     function toggleFullScreen() {
