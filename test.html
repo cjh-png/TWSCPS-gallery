@@ -32,29 +32,25 @@
     }
     .month-btn.active { background-color: var(--primary-color); color: #fff; border-color: var(--primary-color); }
 
-    /* === Swiper 3D 配置修正 === */
+    /* === Swiper === */
     .swiper { width: 100%; padding-top: 50px; padding-bottom: 50px; }
     
     .swiper-slide { 
-      /* 🌟 核心修正：寬度改為 75%，以便看見兩側 3D 圖片 */
-      width: 75% !important; 
-      max-width: 600px;
+      /* 🌟 核心修改：移除 width 限制，全交給 JS 的 slidesPerView 去算 */
       height: 60vh; 
       display: flex; align-items: center; justify-content: center; 
       background-color: #000; border-radius: 12px; overflow: hidden;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
     }
     
     .swiper-slide img { 
-      width: 100%; height: 100%; object-fit: contain; 
-      /* 確保圖片在加載前不佔據錯誤空間 */
-      display: block; 
+      width: 100%; height: 100%; object-fit: contain; display: block; 
     }
 
     .folder-badge {
       position: absolute; top: 10px; left: 10px; z-index: 10;
       background-color: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 4px; 
-      font-size: clamp(10px, 2.5vw, 13px); /* 響應式字體 */
+      font-size: clamp(10px, 2.5vw, 13px); 
     }
 
     #custom-pagination { text-align: center; margin: 20px 0; font-weight: bold; font-size: 18px; }
@@ -89,7 +85,6 @@
     });
 
     function initGallery(data) {
-      // 1. 生成月份導覽
       var nav = document.getElementById('month-nav');
       var months = [];
       data.forEach(function(img) {
@@ -108,35 +103,31 @@
         nav.appendChild(btn);
       });
 
-      // 2. 初始化 Swiper 
       mySwiper = new Swiper(".mySwiper", {
-        // 🌟 3. 開啟 3D 效果
-        effect: "coverflow",
-        grabCursor: true,
+        // 🌟 核心修改 1：不寫 auto，直接告訴它畫面上顯示 1.5 張（中間 1 張，左右各露 0.25 張）
+        slidesPerView: 1.5, 
         centeredSlides: true,
-        slidesPerView: "auto", 
+        
+        // 3D 效果
+        effect: "coverflow",
         coverflowEffect: {
-          rotate: 20,       // 旋轉角度
-          stretch: 0,       // 拉伸
-          depth: 200,       // 深度
-          modifier: 1,      // 效果倍率
-          slideShadows: true, // 陰影
+          rotate: 30,       // 稍微增加旋轉角度
+          stretch: 0,
+          depth: 150,
+          modifier: 1,
+          slideShadows: true,
         },
         
-        // ⚠️ 測試階段建議先設為 false，避免虛擬列表渲染 Bug
         loop: false, 
-        
         pagination: { el: "#custom-pagination", type: "fraction" },
-        autoplay: { delay: 3000, disableOnInteraction: false },
 
         virtual: {
           slides: data,
-          // 🌟 4. 關鍵修改：增加預渲染張數（緩存）
-          // 前後各預載 5 張，共渲染 11 張 DOM 節點，確保 3D 空間圖片不留白
-          addSlidesBefore: 5, 
-          addSlidesAfter: 5,  
+          // 🌟 核心修改 2：前後緩存各 3 張就足夠了
+          addSlidesBefore: 3, 
+          addSlidesAfter: 3,  
           renderSlide: function (slideData) {
-            // 🟡 保持 iOS.html 最原始的路徑抓取邏輯
+            // 保持最原始的成功路徑
             var imgUrl = (window.location.protocol === 'file:') ? slideData.highUrl : slideData.thumbUrl;
             return '<div class="swiper-slide">' +
                      '<div class="folder-badge">' + slideData.folderName + '</div>' +
@@ -154,7 +145,8 @@
 
     function updateActiveMonthBtn(data) {
       if (!mySwiper) return;
-      var currentIndex = mySwiper.activeIndex; // 虛擬模式建議用 activeIndex
+      var currentIndex = mySwiper.activeIndex;
+      if (!data[currentIndex]) return;
       var currentLabel = data[currentIndex].monthLabel;
       var btns = document.querySelectorAll('.month-btn');
       btns.forEach(function(b) { b.classList.remove('active'); });
