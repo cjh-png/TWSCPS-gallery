@@ -3,78 +3,67 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>TWSCPS-2526 專業3D展廳</title>
+  <title>TWSCPS-2526線上影展 - Ipad 3D版</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
   
   <style>
-    :root { --primary: #007AFF; --bg: #000; }
+    :root { --primary-color: #0056b3; --bg-color: #1a1a1d; }
     body { 
       margin: 0; padding: 0; font-family: 'Noto Sans TC', sans-serif; 
-      background-color: var(--bg); color: #fff; overflow-x: hidden; 
+      background-color: var(--bg-color); color: #fff; overflow-x: hidden; 
+      padding-bottom: 40vh; 
     }
 
-    /* === 3D 專業 Banner (參考 index.html 樣式) === */
-    .banner-wrapper { 
-      position: relative; width: 100%; height: 260px; 
-      background-color: #000; overflow: hidden;
-    }
-    .banner-blur { 
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background-size: cover; background-position: center;
-      filter: blur(15px) brightness(0.5); transform: scale(1.2);
-    }
-    .banner-img { 
-      position: relative; width: 100%; height: 100%; 
-      object-fit: contain; z-index: 2; 
-    }
+    /* === Banner === */
+    .banner-container { width: 100%; height: 260px; background-color: #000; overflow: hidden; }
+    .banner-container img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-    /* === 月份導覽 (吸頂效果) === */
+    /* === 月份導覽 === */
     #month-nav { 
-      display: flex; gap: 10px; overflow-x: auto; padding: 15px; 
-      background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
-      position: sticky; top: 0; z-index: 100;
+      display: flex; gap: 10px; overflow-x: auto; padding: 15px 10px; 
+      background-color: rgba(0,0,0,0.5); position: sticky; top: 0; z-index: 100;
+      scrollbar-width: none;
     }
     #month-nav::-webkit-scrollbar { display: none; }
     .month-btn { 
-      padding: 8px 18px; border-radius: 20px; border: 1px solid #444;
-      background: #222; color: #ccc; white-space: nowrap; font-size: 14px;
+      padding: 8px 16px; border-radius: 20px; border: 1px solid #444;
+      background-color: #2a2a2d; color: #ccc; white-space: nowrap; cursor: pointer; font-size: 14px;
     }
-    .month-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .month-btn.active { background-color: var(--primary-color); color: #fff; border-color: var(--primary-color); }
 
-    /* === Swiper 3D 核心配置 === */
-    .swiper { width: 100%; padding-top: 30px; padding-bottom: 80px; }
+    /* === Swiper 3D 配置修正 === */
+    .swiper { width: 100%; padding-top: 50px; padding-bottom: 50px; }
+    
     .swiper-slide { 
-      /* 🟢 修正：手機與 iPad 的等比例寬度 */
-      width: 85% !important; 
-      max-width: 650px;
+      /* 🌟 核心修正：寬度改為 75%，以便看見兩側 3D 圖片 */
+      width: 75% !important; 
+      max-width: 600px;
       height: 60vh; 
-      background: #111; border-radius: 15px; overflow: hidden;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+      display: flex; align-items: center; justify-content: center; 
+      background-color: #000; border-radius: 12px; overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
     }
-    .swiper-slide img { width: 100%; height: 100%; object-fit: contain; }
+    
+    .swiper-slide img { 
+      width: 100%; height: 100%; object-fit: contain; 
+      /* 確保圖片在加載前不佔據錯誤空間 */
+      display: block; 
+    }
 
-    /* 🟢 修正：文件夾標籤等比例縮放 (不再遮擋) */
     .folder-badge {
-      position: absolute; top: 12px; left: 12px; z-index: 10;
-      background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
-      padding: 5px 12px; border-radius: 6px;
-      border-left: 4px solid var(--primary);
-      /* 使用 clamp：最小 10px，隨螢幕寬度變動，最大 15px */
-      font-size: clamp(10px, 2.5vw, 15px);
-      max-width: 85%;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      position: absolute; top: 10px; left: 10px; z-index: 10;
+      background-color: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 4px; 
+      font-size: clamp(10px, 2.5vw, 13px); /* 響應式字體 */
     }
 
-    #custom-pagination { text-align: center; margin-top: -40px; font-weight: bold; color: #888; }
+    #custom-pagination { text-align: center; margin: 20px 0; font-weight: bold; font-size: 18px; }
   </style>
 </head>
 <body>
 
-  <div class="banner-wrapper">
-    <div id="banner-blur" class="banner-blur"></div>
-    <img id="banner-img" class="banner-img" src="">
+  <div class="banner-container">
+    <img id="banner-img" src="">
   </div>
 
   <div id="month-nav"></div>
@@ -93,7 +82,6 @@
     document.addEventListener('DOMContentLoaded', function() {
       if (typeof eventConfig !== 'undefined') {
         document.getElementById('banner-img').src = eventConfig.bannerUrl;
-        document.getElementById('banner-blur').style.backgroundImage = "url('" + eventConfig.bannerUrl + "')";
       }
       if (typeof localImages !== 'undefined' && localImages.length > 0) {
         initGallery(localImages);
@@ -101,7 +89,7 @@
     });
 
     function initGallery(data) {
-      // 1. 月份導覽按鈕
+      // 1. 生成月份導覽
       var nav = document.getElementById('month-nav');
       var months = [];
       data.forEach(function(img) {
@@ -120,29 +108,39 @@
         nav.appendChild(btn);
       });
 
-      // 2. 初始化 Swiper (注入 3D 效果)
+      // 2. 初始化 Swiper 
       mySwiper = new Swiper(".mySwiper", {
-        effect: "coverflow", // 🟢 開啟 3D
+        // 🌟 3. 開啟 3D 效果
+        effect: "coverflow",
+        grabCursor: true,
         centeredSlides: true,
-        slidesPerView: "auto",
+        slidesPerView: "auto", 
         coverflowEffect: {
-          rotate: 20,    // 旋轉角度
-          stretch: 0,
-          depth: 150,    // 深度感
-          modifier: 1,
-          slideShadows: true,
+          rotate: 20,       // 旋轉角度
+          stretch: 0,       // 拉伸
+          depth: 200,       // 深度
+          modifier: 1,      // 效果倍率
+          slideShadows: true, // 陰影
         },
-        // 🔴 修正：Virtual 模式下，loop: true 有時會導致圖片渲染失敗，建議改為 false 測試
+        
+        // ⚠️ 測試階段建議先設為 false，避免虛擬列表渲染 Bug
         loop: false, 
+        
         pagination: { el: "#custom-pagination", type: "fraction" },
+        autoplay: { delay: 3000, disableOnInteraction: false },
+
         virtual: {
           slides: data,
+          // 🌟 4. 關鍵修改：增加預渲染張數（緩存）
+          // 前後各預載 5 張，共渲染 11 張 DOM 節點，確保 3D 空間圖片不留白
+          addSlidesBefore: 5, 
+          addSlidesAfter: 5,  
           renderSlide: function (slideData) {
-            // 🟢 完全保留 iOS.html 成功的路徑邏輯，不使用 encodeURI
+            // 🟡 保持 iOS.html 最原始的路徑抓取邏輯
             var imgUrl = (window.location.protocol === 'file:') ? slideData.highUrl : slideData.thumbUrl;
             return '<div class="swiper-slide">' +
                      '<div class="folder-badge">' + slideData.folderName + '</div>' +
-                     '<img src="' + imgUrl + '" loading="lazy">' +
+                     '<img src="' + imgUrl + '">' +
                    '</div>';
           }
         },
@@ -158,7 +156,8 @@
       if (!mySwiper) return;
       var currentIndex = mySwiper.activeIndex; // 虛擬模式建議用 activeIndex
       var currentLabel = data[currentIndex].monthLabel;
-      document.querySelectorAll('.month-btn').forEach(function(b) { b.classList.remove('active'); });
+      var btns = document.querySelectorAll('.month-btn');
+      btns.forEach(function(b) { b.classList.remove('active'); });
       var activeBtn = document.getElementById('btn-month-' + currentLabel);
       if (activeBtn) {
         activeBtn.classList.add('active');
