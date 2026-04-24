@@ -3,82 +3,114 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  
-  <title>實驗室 - 3D 智慧影展</title>
-  
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+  <title>專業版影展 - 3D 視覺展廳</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
-  
   <style>
-    :root { --primary: #007AFF; --bg: #000; }
-    body { margin: 0; background: var(--bg); color: #fff; font-family: 'Noto Sans TC', sans-serif; overflow: hidden; }
-
-    /* 頂部橫幅：優化視覺深度 */
-    .banner { position: relative; width: 100%; height: 220px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-    .banner-blur { position: absolute; width: 110%; height: 110%; background-size: cover; background-position: center; filter: blur(20px) brightness(0.5); z-index: 1; }
-    .banner-img { position: relative; z-index: 2; height: 80%; object-fit: contain; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 8px; }
-
-    /* 月份導覽：毛玻璃效果 */
-    .nav-bar { 
-      display: flex; gap: 10px; overflow-x: auto; padding: 15px; 
-      background: rgba(255,255,255,0.05); backdrop-filter: blur(15px);
-      -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    :root {
+      --primary: #007AFF;
+      --bg: #0b0b0d;
+      --glass: rgba(255, 255, 255, 0.1);
     }
-    .nav-bar::-webkit-scrollbar { display: none; }
-    .nav-btn { 
-      padding: 8px 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2);
-      background: transparent; color: #aaa; white-space: nowrap; cursor: pointer; transition: 0.3s;
-    }
-    .nav-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 
-    /* Swiper 主體 */
-    .swiper { width: 100%; height: calc(100vh - 350px); padding: 30px 0 60px; }
-    .swiper-slide { 
-      width: 600px; max-width: 85%; height: 100%; 
-      background: #111; border-radius: 20px; overflow: hidden;
+    body {
+      margin: 0; background: var(--bg); color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* === 1. 3D Banner 視差效果 === */
+    .banner-wrapper {
+      position: relative; width: 100%; height: 280px; 
+      overflow: hidden; perspective: 1000px;
+    }
+    .banner-inner {
+      width: 100%; height: 120%; /* 稍微高一點以便視差移動 */
+      background-size: cover; background-position: center;
+      filter: brightness(0.7);
+      animation: kenBurns 20s infinite alternate; /* 微縮放動畫 */
+    }
+    @keyframes kenBurns {
+      from { transform: scale(1); }
+      to { transform: scale(1.1) translateY(-5%); }
+    }
+    .banner-content {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      text-align: center; z-index: 5; text-shadow: 0 4px 15px rgba(0,0,0,0.8);
+    }
+    .banner-content h1 { font-size: 2rem; margin: 0; letter-spacing: 2px; }
+
+    /* === 2. 月份導覽 (更專業的毛玻璃樣式) === */
+    .month-nav {
+      display: flex; gap: 10px; overflow-x: auto; padding: 20px;
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(11, 11, 13, 0.7); backdrop-filter: blur(20px);
+    }
+    .month-nav::-webkit-scrollbar { display: none; }
+    .month-btn {
+      padding: 8px 18px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.1);
+      background: var(--glass); color: #ccc; cursor: pointer; transition: all 0.3s;
+      white-space: nowrap; font-size: 14px;
+    }
+    .month-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); transform: scale(1.05); }
+
+    /* === 3. Swiper 3D Coverflow === */
+    .swiper { width: 100%; padding-top: 30px; padding-bottom: 80px; }
+    .swiper-slide {
+      width: 500px; height: 65vh; max-height: 700px;
+      background: #000; border-radius: 20px; overflow: hidden;
       display: flex; align-items: center; justify-content: center;
-      transition: transform 0.3s;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
     }
-
-    /* 借鑒：Swiper Zoom 容器結構 */
-    .swiper-zoom-container { width: 100%; height: 100%; }
     .swiper-slide img { width: 100%; height: 100%; object-fit: contain; }
 
-    /* 懸浮控制台 */
-    .controls { 
-      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-      display: flex; gap: 15px; z-index: 100;
-      background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 40px; border: 1px solid rgba(255,255,255,0.1);
+    /* === 4. 響應式文件夾標籤 (解決手機遮擋問題) === */
+    .folder-badge {
+      position: absolute; top: 15px; left: 15px; z-index: 10;
+      background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px);
+      padding: 6px 12px; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      /* 使用 clamp 設定字體大小：最小 12px, 隨螢幕變動, 最大 16px */
+      font-size: clamp(12px, 2.5vw, 16px); 
+      max-width: 80%; /* 防止過長 */
+      pointer-events: none;
     }
-    .ctrl-btn { background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
-    .ctrl-btn.active { color: var(--primary); }
 
-    /* 文字標記 */
-    .info-badge { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); padding: 5px 12px; border-radius: 10px; font-size: 12px; }
+    /* === 5. 手機端優化調整 === */
+    @media (max-width: 600px) {
+      .swiper-slide { width: 85%; height: 55vh; }
+      .banner-wrapper { height: 180px; }
+      .banner-content h1 { font-size: 1.4rem; }
+    }
 
-    @media (max-width: 600px) { .swiper-slide { width: 90%; } }
+    /* 音樂播放器樣式優化 */
+    .music-panel {
+      position: fixed; bottom: 25px; right: 25px; z-index: 999;
+      background: var(--glass); backdrop-filter: blur(15px);
+      padding: 10px 20px; border-radius: 40px; border: 1px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; gap: 12px;
+    }
+    #play-btn { background: var(--primary); border: none; width: 35px; height: 35px; border-radius: 50%; color: white; cursor: pointer; }
   </style>
 </head>
 <body>
 
-  <div class="banner">
-    <div id="b-blur" class="banner-blur"></div>
-    <img id="b-img" class="banner-img" src="" alt="Banner">
+  <div class="banner-wrapper">
+    <div id="banner-bg" class="banner-inner"></div>
+    <div class="banner-content">
+      <h1 id="activity-name">Loading...</h1>
+    </div>
   </div>
 
-  <div id="nav" class="nav-bar"></div>
+  <div id="nav" class="month-nav"></div>
 
   <div class="swiper mySwiper">
     <div class="swiper-wrapper"></div>
-    <div class="swiper-pagination"></div>
+    <div class="swiper-pagination" style="color: #fff; bottom: 20px !important;"></div>
   </div>
 
-  <div class="controls">
-    <button class="ctrl-btn" id="play-toggle" onclick="toggleAutoplay()">▶️</button>
-    <button class="ctrl-btn" id="music-btn" onclick="toggleMusic()">🎵</button>
-    <button class="ctrl-btn" onclick="toggleFS()">📺</button>
+  <div class="music-panel">
+    <button id="play-btn" onclick="toggleMusic()">▶</button>
+    <div id="track-name" style="font-size: 12px; color: #eee;">Music</div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
@@ -87,114 +119,86 @@
   <script>
     let swiper;
     const audio = new Audio();
-    let isAutoplay = false;
+    
+    // 安全轉碼函數
+    const safeUrl = (url) => url ? encodeURI(url).replace(/'/g, "%27") : "";
 
-    // 安全路徑處理函數
-    function getSafePath(path) {
-      if (!path) return "";
-      return encodeURI(path).replace(/'/g, "%27");
-    }
-
-    // 初始化網頁
     document.addEventListener('DOMContentLoaded', () => {
-      // 1. 設定 Banner
-      const sBanner = getSafePath(eventConfig.bannerUrl);
-      document.getElementById('b-blur').style.backgroundImage = `url('${sBanner}')`;
-      document.getElementById('b-img').src = sBanner;
+      // 初始化資訊
+      document.getElementById('activity-name').innerText = eventConfig.activityName;
+      document.getElementById('banner-bg').style.backgroundImage = `url('${safeUrl(eventConfig.bannerUrl)}')`;
 
-      // 2. 生成導覽按鈕
+      // 初始化導覽
+      initNav();
+      // 初始化 3D Swiper
+      initSwiper();
+    });
+
+    function initNav() {
       const nav = document.getElementById('nav');
-      const months = [...new Set(localImages.map(img => img.monthLabel))];
-      months.forEach(m => {
+      const uniqueMonths = [...new Set(localImages.map(i => i.monthLabel))];
+      uniqueMonths.forEach(m => {
         const btn = document.createElement('button');
-        btn.className = 'nav-btn';
+        btn.className = 'month-btn';
         btn.innerText = m;
         btn.onclick = () => {
-          const targetIndex = localImages.findIndex(img => img.monthLabel === m);
-          swiper.slideTo(targetIndex);
+          const idx = localImages.findIndex(img => img.monthLabel === m);
+          swiper.slideTo(idx);
         };
         nav.appendChild(btn);
       });
+    }
 
-      // 3. 初始化 Swiper (加入 Zoom 與 智慧預載)
+    function initSwiper() {
       swiper = new Swiper(".mySwiper", {
-        effect: "coverflow",
-        grabCursor: true,
+        effect: "coverflow", // 🟢 3D 切換效果
         centeredSlides: true,
         slidesPerView: "auto",
-        zoom: true, // 🟢 啟用 iPad 雙指縮放
-        loop: true,
-        coverflowEffect: { rotate: 20, stretch: 0, depth: 300, modifier: 1, slideShadows: true },
-        autoplay: false, // 預設關閉
+        coverflowEffect: {
+          rotate: 20,    // 旋轉角度
+          stretch: 0,    // 拉伸
+          depth: 200,    // 深度感
+          modifier: 1,   // 效果倍率
+          slideShadows: true, // 陰影
+        },
         virtual: {
           enabled: true,
           slides: localImages,
           renderSlide: (slide, index) => {
-            const sThumb = getSafePath(slide.thumbUrl);
-            const sHigh = getSafePath(slide.highUrl);
+            // 自動判斷縮圖或原圖路徑
+            const imgPath = (window.location.protocol === 'file:') ? slide.highUrl : slide.thumbUrl;
             return `
               <div class="swiper-slide">
-                <div class="info-badge">${slide.folderName}</div>
-                <div class="swiper-zoom-container">
-                  <img src="${sThumb}" 
-                       data-src="${sHigh}" 
-                       class="lazy-img"
-                       onerror="this.onerror=null; this.src='${sHigh}'">
-                </div>
+                <div class="folder-badge">${slide.folderName}</div>
+                <img src="${safeUrl(imgPath)}" loading="lazy">
               </div>`;
           }
         },
-        pagination: { el: ".swiper-pagination", type: "progressbar" }, // 🟢 借鑒：進度條顯示
+        pagination: { el: ".swiper-pagination", type: "fraction" },
         on: {
           slideChange: function() {
-            updateNav(this.realIndex);
+            const currentMonth = localImages[this.realIndex].monthLabel;
+            document.querySelectorAll('.month-btn').forEach(b => {
+              b.classList.toggle('active', b.innerText === currentMonth);
+              if(b.innerText === currentMonth) b.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+            });
           }
         }
       });
-
-      // 音樂預載
-      if(localPlaylist.length > 0) {
-        audio.src = localPlaylist[0].src;
-      }
-    });
-
-    function updateNav(index) {
-      const currentMonth = localImages[index].monthLabel;
-      document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.innerText === currentMonth);
-        if(btn.innerText === currentMonth) btn.scrollIntoView({ behavior: 'smooth', inline: 'center' });
-      });
-    }
-
-    // 🟢 功能：切換自動播放 (Slideshow Mode)
-    function toggleAutoplay() {
-      isAutoplay = !isAutoplay;
-      const btn = document.getElementById('play-toggle');
-      if (isAutoplay) {
-        swiper.autoplay.start();
-        swiper.params.autoplay.delay = 3000;
-        btn.innerText = "⏸️";
-        btn.classList.add('active');
-      } else {
-        swiper.autoplay.stop();
-        btn.innerText = "▶️";
-        btn.classList.remove('active');
-      }
     }
 
     function toggleMusic() {
+      if (!audio.src && localPlaylist.length > 0) {
+        audio.src = localPlaylist[0].src;
+        document.getElementById('track-name').innerText = localPlaylist[0].name;
+      }
       if (audio.paused) {
         audio.play();
-        document.getElementById('music-btn').classList.add('active');
+        document.getElementById('play-btn').innerText = "⏸";
       } else {
         audio.pause();
-        document.getElementById('music-btn').classList.remove('active');
+        document.getElementById('play-btn').innerText = "▶";
       }
-    }
-
-    function toggleFS() {
-      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-      else document.exitFullscreen();
     }
   </script>
 </body>
