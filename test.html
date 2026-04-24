@@ -3,202 +3,136 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>專業版影展 - 3D 視覺展廳</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+  <title>專業修復版 - 3D 影展</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
   <style>
-    :root {
-      --primary: #007AFF;
-      --bg: #0b0b0d;
-      --glass: rgba(255, 255, 255, 0.1);
-    }
+    :root { --primary: #007AFF; --bg: #000; }
+    body { margin: 0; background: var(--bg); color: #fff; font-family: sans-serif; overflow-x: hidden; }
 
-    body {
-      margin: 0; background: var(--bg); color: #fff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      overflow-x: hidden;
-    }
+    /* 3D Banner 效果 */
+    .banner-container { width: 100%; height: 220px; overflow: hidden; position: relative; }
+    .banner-img { width: 100%; height: 110%; object-fit: cover; filter: brightness(0.6); position: absolute; top: -5%; }
+    .banner-title { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1.8rem; font-weight: bold; text-shadow: 0 4px 10px rgba(0,0,0,0.5); width: 90%; text-align: center; }
 
-    /* === 1. 3D Banner 視差效果 === */
-    .banner-wrapper {
-      position: relative; width: 100%; height: 280px; 
-      overflow: hidden; perspective: 1000px;
-    }
-    .banner-inner {
-      width: 100%; height: 120%; /* 稍微高一點以便視差移動 */
-      background-size: cover; background-position: center;
-      filter: brightness(0.7);
-      animation: kenBurns 20s infinite alternate; /* 微縮放動畫 */
-    }
-    @keyframes kenBurns {
-      from { transform: scale(1); }
-      to { transform: scale(1.1) translateY(-5%); }
-    }
-    .banner-content {
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      text-align: center; z-index: 5; text-shadow: 0 4px 15px rgba(0,0,0,0.8);
-    }
-    .banner-content h1 { font-size: 2rem; margin: 0; letter-spacing: 2px; }
-
-    /* === 2. 月份導覽 (更專業的毛玻璃樣式) === */
-    .month-nav {
-      display: flex; gap: 10px; overflow-x: auto; padding: 20px;
-      position: sticky; top: 0; z-index: 100;
-      background: rgba(11, 11, 13, 0.7); backdrop-filter: blur(20px);
-    }
+    /* 月份導覽 */
+    .month-nav { display: flex; gap: 10px; overflow-x: auto; padding: 15px; position: sticky; top: 0; z-index: 100; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); }
     .month-nav::-webkit-scrollbar { display: none; }
-    .month-btn {
-      padding: 8px 18px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.1);
-      background: var(--glass); color: #ccc; cursor: pointer; transition: all 0.3s;
-      white-space: nowrap; font-size: 14px;
-    }
-    .month-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); transform: scale(1.05); }
+    .month-btn { padding: 8px 18px; border-radius: 20px; border: 1px solid #444; background: #222; color: #ccc; white-space: nowrap; font-size: 14px; cursor: pointer; }
+    .month-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 
-    /* === 3. Swiper 3D Coverflow === */
-    .swiper { width: 100%; padding-top: 30px; padding-bottom: 80px; }
-    .swiper-slide {
-      width: 500px; height: 65vh; max-height: 700px;
-      background: #000; border-radius: 20px; overflow: hidden;
+    /* Swiper 3D 容器 */
+    .swiper { width: 100%; padding-top: 20px; padding-bottom: 50px; }
+    .swiper-slide { 
+      width: 80% !important; /* 手機端自動等比例 */
+      max-width: 600px;
+      height: 60vh;
       display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      background: #111; border-radius: 15px; overflow: hidden;
     }
     .swiper-slide img { width: 100%; height: 100%; object-fit: contain; }
 
-    /* === 4. 響應式文件夾標籤 (解決手機遮擋問題) === */
+    /* 響應式文字 (Folder Badge) */
     .folder-badge {
-      position: absolute; top: 15px; left: 15px; z-index: 10;
-      background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px);
-      padding: 6px 12px; border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.1);
-      /* 使用 clamp 設定字體大小：最小 12px, 隨螢幕變動, 最大 16px */
-      font-size: clamp(12px, 2.5vw, 16px); 
-      max-width: 80%; /* 防止過長 */
-      pointer-events: none;
+      position: absolute; top: 10px; left: 10px;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+      padding: 4px 10px; border-radius: 5px;
+      /* 重要：使用 clamp 確保字體在手機上變小，在 iPad 上適中 */
+      font-size: clamp(10px, 3vw, 14px); 
+      border-left: 3px solid var(--primary);
+      max-width: 90%;
     }
 
-    /* === 5. 手機端優化調整 === */
     @media (max-width: 600px) {
-      .swiper-slide { width: 85%; height: 55vh; }
-      .banner-wrapper { height: 180px; }
-      .banner-content h1 { font-size: 1.4rem; }
+      .banner-container { height: 160px; }
+      .swiper-slide { height: 50vh; }
     }
-
-    /* 音樂播放器樣式優化 */
-    .music-panel {
-      position: fixed; bottom: 25px; right: 25px; z-index: 999;
-      background: var(--glass); backdrop-filter: blur(15px);
-      padding: 10px 20px; border-radius: 40px; border: 1px solid rgba(255,255,255,0.1);
-      display: flex; align-items: center; gap: 12px;
-    }
-    #play-btn { background: var(--primary); border: none; width: 35px; height: 35px; border-radius: 50%; color: white; cursor: pointer; }
   </style>
 </head>
 <body>
 
-  <div class="banner-wrapper">
-    <div id="banner-bg" class="banner-inner"></div>
-    <div class="banner-content">
-      <h1 id="activity-name">Loading...</h1>
-    </div>
+  <div class="banner-container">
+    <img id="banner-img" class="banner-img" src="">
+    <div id="activity-name" class="banner-title">載入中...</div>
   </div>
 
   <div id="nav" class="month-nav"></div>
 
   <div class="swiper mySwiper">
     <div class="swiper-wrapper"></div>
-    <div class="swiper-pagination" style="color: #fff; bottom: 20px !important;"></div>
+    <div class="swiper-pagination"></div>
   </div>
 
-  <div class="music-panel">
-    <button id="play-btn" onclick="toggleMusic()">▶</button>
-    <div id="track-name" style="font-size: 12px; color: #eee;">Music</div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
   <script src="./data.js"></script>
 
   <script>
-    let swiper;
-    const audio = new Audio();
-    
-    // 安全轉碼函數
-    const safeUrl = (url) => url ? encodeURI(url).replace(/'/g, "%27") : "";
+    var mySwiper;
 
-    document.addEventListener('DOMContentLoaded', () => {
-      // 初始化資訊
+    document.addEventListener('DOMContentLoaded', function() {
+      // 1. 初始化基礎資訊
       document.getElementById('activity-name').innerText = eventConfig.activityName;
-      document.getElementById('banner-bg').style.backgroundImage = `url('${safeUrl(eventConfig.bannerUrl)}')`;
+      document.getElementById('banner-img').src = eventConfig.bannerUrl;
 
-      // 初始化導覽
-      initNav();
-      // 初始化 3D Swiper
-      initSwiper();
-    });
+      // 2. 生成月份導覽
+      var nav = document.getElementById('nav');
+      var months = [];
+      localImages.forEach(function(img) {
+        if (months.indexOf(img.monthLabel) === -1) months.push(img.monthLabel);
+      });
 
-    function initNav() {
-      const nav = document.getElementById('nav');
-      const uniqueMonths = [...new Set(localImages.map(i => i.monthLabel))];
-      uniqueMonths.forEach(m => {
-        const btn = document.createElement('button');
+      months.forEach(function(m) {
+        var btn = document.createElement('button');
         btn.className = 'month-btn';
+        btn.id = 'btn-month-' + m;
         btn.innerText = m;
-        btn.onclick = () => {
-          const idx = localImages.findIndex(img => img.monthLabel === m);
-          swiper.slideTo(idx);
+        btn.onclick = function() {
+          var targetIndex = localImages.findIndex(img => img.monthLabel === m);
+          mySwiper.slideTo(targetIndex);
         };
         nav.appendChild(btn);
       });
-    }
 
-    function initSwiper() {
-      swiper = new Swiper(".mySwiper", {
-        effect: "coverflow", // 🟢 3D 切換效果
+      // 3. 初始化 Swiper (回退到更穩定的渲染邏輯)
+      mySwiper = new Swiper(".mySwiper", {
+        effect: "coverflow", // 🟢 3D 效果
+        grabCursor: true,
         centeredSlides: true,
         slidesPerView: "auto",
         coverflowEffect: {
-          rotate: 20,    // 旋轉角度
-          stretch: 0,    // 拉伸
-          depth: 200,    // 深度感
-          modifier: 1,   // 效果倍率
-          slideShadows: true, // 陰影
+          rotate: 15,
+          stretch: 0,
+          depth: 100,
+          modifier: 2,
+          slideShadows: true,
         },
         virtual: {
-          enabled: true,
           slides: localImages,
-          renderSlide: (slide, index) => {
-            // 自動判斷縮圖或原圖路徑
-            const imgPath = (window.location.protocol === 'file:') ? slide.highUrl : slide.thumbUrl;
-            return `
-              <div class="swiper-slide">
-                <div class="folder-badge">${slide.folderName}</div>
-                <img src="${safeUrl(imgPath)}" loading="lazy">
-              </div>`;
+          renderSlide: function (slide, index) {
+            // 🟢 使用 iOS.html 成功的路徑判斷邏輯，不加額外的 safeUrl
+            var imgUrl = (window.location.protocol === 'file:') ? slide.highUrl : slide.thumbUrl;
+            return '<div class="swiper-slide">' +
+                     '<div class="folder-badge">' + slide.folderName + '</div>' +
+                     '<img src="' + imgUrl + '">' +
+                   '</div>';
           }
         },
         pagination: { el: ".swiper-pagination", type: "fraction" },
         on: {
           slideChange: function() {
-            const currentMonth = localImages[this.realIndex].monthLabel;
-            document.querySelectorAll('.month-btn').forEach(b => {
-              b.classList.toggle('active', b.innerText === currentMonth);
-              if(b.innerText === currentMonth) b.scrollIntoView({ behavior: 'smooth', inline: 'center' });
-            });
+            updateMonthNav(this.realIndex);
           }
         }
       });
-    }
+    });
 
-    function toggleMusic() {
-      if (!audio.src && localPlaylist.length > 0) {
-        audio.src = localPlaylist[0].src;
-        document.getElementById('track-name').innerText = localPlaylist[0].name;
-      }
-      if (audio.paused) {
-        audio.play();
-        document.getElementById('play-btn').innerText = "⏸";
-      } else {
-        audio.pause();
-        document.getElementById('play-btn').innerText = "▶";
-      }
+    function updateMonthNav(index) {
+      var currentMonth = localImages[index].monthLabel;
+      document.querySelectorAll('.month-btn').forEach(function(btn) {
+        btn.classList.toggle('active', btn.innerText === currentMonth);
+        if (btn.innerText === currentMonth) {
+          btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+      });
     }
   </script>
 </body>
