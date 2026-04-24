@@ -38,7 +38,7 @@
       box-shadow: 0 15px 40px rgba(0,0,0,0.5);
     }
     
-    .slide-bg-blur { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; filter: blur(25px) brightness(0.6); transform: scale(1.1); z-index: 1; }
+    .slide-bg-blur { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; filter: blur(25px) brightness(0.6); transform: scale(1.1); z-index: 1; transition: background-image 0.3s;}
     .main-photo { display: block; max-width: 100%; height: 100%; object-fit: contain; position: relative; z-index: 2; cursor: pointer; transition: opacity 0.3s;}
     
     .folder-badge { position: absolute; top: 20px; left: 20px; background: rgba(0, 0, 0, 0.7); color: white; padding: 7px 18px; border-radius: 30px; font-weight: bold; font-size: 14px; z-index: 10; border-left: 4px solid var(--primary-color); backdrop-filter: blur(5px);}
@@ -99,15 +99,37 @@
     var mySwiper = null;
     var myAudio = new Audio();
     var currentAudioIndex = 0;
-    
-    var isLocal = window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    // 🌟 1. 安全轉碼函數：處理空格與中文，並避免引號衝突
+    function safePath(url) {
+      if (!url) return "";
+      return encodeURI(url).replace(/'/g, "%27").replace(/"/g, "%22");
+    }
+
+    // 🌟 2. 獨立的圖片失敗救援機制 (完全不依賴 HTML 字串拼接)
+    window.handleImgError = function(imgElement, backupUrl, bgId) {
+      if (!imgElement.dataset.retry) {
+        // 第一次失敗（例如找不到縮圖），換成原圖路徑
+        imgElement.dataset.retry = "1";
+        imgElement.src = backupUrl;
+        
+        // 同步替換背景的模糊圖
+        var bgElement = document.getElementById(bgId);
+        if (bgElement) {
+          bgElement.style.backgroundImage = "url('" + backupUrl + "')";
+        }
+      } else {
+        // 如果原圖也讀不到，就徹底放棄，防止瀏覽器無限當機迴圈
+        imgElement.onerror = null; 
+      }
+    };
 
     document.addEventListener("DOMContentLoaded", function() {
       if(typeof eventConfig !== 'undefined') {
         document.title = eventConfig.activityName;
-        // 拔除 encodeURI，直接使用原始路徑
-        document.getElementById('banner-blur').style.backgroundImage = "url('" + eventConfig.bannerUrl + "')";
-        document.getElementById('banner-img').src = eventConfig.bannerUrl;
+        var safeBanner = safePath(eventConfig.bannerUrl);
+        document.getElementById('banner-blur').style.backgroundImage = "url('" + safeBanner + "')";
+        document.getElementById('banner-img').src = safeBanner;
       }
 
       if(typeof localPlaylist !== 'undefined') initMusic(localPlaylist);
@@ -121,7 +143,7 @@
       
       document.body.addEventListener('click', function() {
         if (myAudio.paused && myAudio.src) {
-          myAudio.play().then(() => updatePlayBtnState(true)).catch(e => console.log("等待互動才能播放音訊"));
+          myAudio.play().then(() => updatePlayBtnState(true)).catch(e => console.log("等待互動"));
         }
       }, { once: true });
       
@@ -190,16 +212,16 @@
           enabled: true,
           slides: data,
           renderSlide: function (slideData, index) {
-            // 🚨 修正 1：拔除所有的 encodeURI()，使用最原始字串，防止本地端讀不到
-            var highUrl = slideData.highUrl;
-            var thumbUrl = slideData.thumbUrl;
-            var targetUrl = isLocal ? highUrl : thumbUrl;
+            // 🌟 3. 先完美轉碼，再組合 HTML
+            var sHigh = safePath(slideData.highUrl);
+            var sThumb = safePath(slideData.thumbUrl);
+            var bgId = 'bg-' + index;
 
-            // 🚨 修正 2：在 onerror 中加入「this.onerror=null;」，終結無限迴圈！
+            // 這裡預設先讀縮圖 (sThumb)，失敗就觸發 handleImgError 換成原圖 (sHigh)
             return '<div class="swiper-slide">' +
                      '<div class="folder-badge">' + slideData.folderName + '</div>' +
-                     '<div class="slide-bg-blur" style="background-image: url(\'' + targetUrl + '\');"></div>' +
-                     '<img class="main-photo" src="' + targetUrl + '" onerror="this.onerror=null; this.src=\'' + highUrl + '\';" onclick="openOverlay(\'' + highUrl + '\')">' +
+                     '<div class="slide-bg-blur" id="' + bgId + '" style="background-image: url(\'' + sThumb + '\');"></div>' +
+                     '<img class="main-photo" src="' + sThumb + '" onerror="handleImgError(this, \'' + sHigh + '\', \'' + bgId + '\')" onclick="openOverlay(\'' + sHigh + '\')">' +
                      '<div class="photo-name">' + slideData.folderName + '</div>' +
                    '</div>';
           }
@@ -231,7 +253,7 @@
       preloadSequentialImages(data);
     }
 
-    // 背景緩存機制
+    // 🌟 4. 背景快取同樣使用安全轉碼路徑
     function preloadSequentialImages(data) {
       var currentIndex = 0;
       function loadNext() {
@@ -240,9 +262,7 @@
         img.onload = loadNext; 
         img.onerror = loadNext;
         
-        var targetUrl = isLocal ? data[currentIndex].highUrl : data[currentIndex].thumbUrl;
-        // 🚨 修正 3：這裡也拔除 encodeURI
-        img.src = targetUrl;
+        img.src = safePath(data[currentIndex].thumbUrl);
         currentIndex++;
       }
       loadNext(); 
