@@ -28,11 +28,6 @@ async function buildGallery() {
                 const dateMatch = item.match(/(\d{4})[-_.\s]?(\d{2})[-_.\s]?\d{2}/);
                 if (dateMatch) monthLabel = `${dateMatch[1]}年${parseInt(dateMatch[2], 10)}月`;
 
-                // 🌟 核心修改：去除資料夾名稱前面的日期 (例如 20250821 或 2025-08-21)，並去掉前後空格
-                let displayName = item.replace(/^\d{4}[-_.\s]?\d{2}[-_.\s]?\d{2}[-_.\s]?/, '').trim();
-                // 預防萬一：如果資料夾名稱「只有日期」沒有其他文字，就保留原名以免空白
-                if (!displayName) displayName = item;
-
                 const files = fs.readdirSync(itemPath);
                 for (const file of files) {
                     if (file.match(/\.(jpg|jpeg|png|webp)$/i)) {
@@ -51,7 +46,7 @@ async function buildGallery() {
                             }
 
                             localImages.push({
-                                folderName: displayName, // 🌟 修改這裡：使用過濾掉日期的乾淨名稱
+                                folderName: item,
                                 monthLabel: monthLabel,
                                 highUrl: `./images/${item}/${file}`,      
                                 thumbUrl: `./thumbs/${item}/${webpFileName}` 
